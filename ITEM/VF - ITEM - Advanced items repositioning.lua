@@ -6,32 +6,32 @@
  * Links: https://github.com/Infrabass/Reascripts
  * Version: 1.0
  * About: 
- 	# Advanced items repositioning
-
-	- Use start or end of items to reposition
-	- 3 modes:
-	    - Track
-	    - Queue
-	    - Timeline
-	- Set interval between items in seconds, frames or beats
-	- Optinally add time offset between groups of items with the same name
-	- Non-linear factor to create rallentendo & acceleratendo
-	- Toggle to preserve overlapping items
-	- Toggle to preserve adjacent items
-	- Realtime mode to tweak parameters and see result in realtime
-	- Support moving envelope points with items
-	- Support NVK folder items
-	- Support ripple editing
-	- Option to save last used settings
-
-	# Dependencies
- 	- Requires ReaImGui
+ *	# Advanced items repositioning
+ *
+ *	- Use start or end of items to reposition
+ *	- 3 modes:
+ *	    - Track
+ *	    - Queue
+ *	    - Timeline
+ *	- Set interval between items in seconds, frames or beats
+ *	- Optinally add time offset between groups of items with the same name
+ *	- Non-linear factor to create rallentendo & acceleratendo
+ *	- Toggle to preserve overlapping items
+ *	- Toggle to preserve adjacent items
+ *	- Realtime mode to tweak parameters and see result in realtime
+ *	- Support moving envelope points with items
+ *	- Support NVK folder items
+ *	- Support ripple editing
+ *	- Option to save last used settings
+ *
+ *	# Dependencies
+ * 	- Requires ReaImGui
 ]]
 
 --[[
  * Changelog:
-   * v1.1 (2023-05-24)
-    + Initial release
+ * v1.0 (2023-05-24)
+   + Initial release
 ]]
 
 ------------------------------------------------------------------------------------
