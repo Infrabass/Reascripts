@@ -30,31 +30,8 @@
 
 --[[
  * Changelog:
-   * v0.3.5 (2021-06-22)
-    + Added (Un)dock button
-   * v0.3.4 (2021-06-22)
-    + Fixed paths so it works on ARM version on OSX
-   * v0.3.3 (2020-08-20)
-    + Docking bug fixed
-   * v0.3.2 (2020-08-18)
-    + Docking improved (automatically saved)
-    + Added option to optimize Chernobyl
-    + Added option to snap mutations to grid
-    + Added Horizontal 2 layout
-    + Some UI bugs fixed
-   * v0.3.1 (2020-05-25)
-    + Feedback button implemented
-    + Beta validator improved
-   * v0.3 (2020-05-24)
-    + Compiler created
-   * v0.2.2 (2020-05-14)
-    + Added actions for mutation and decontamination
-   * v0.2.1 (2020-05-14)
-    + Initial run safety fix
-   * v0.2 (2020-05-14)
-    + Variator horizontal layout
-   * v0.1 (2020-05-11)
-    + Initial version
+   * v1.1 (2023-05-24)
+    + Initial release
 ]]
 
 ------------------------------------------------------------------------------------
