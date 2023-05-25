@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF Reascripts and JSFX" commit="83f20cddb2b8b7c9d2d1c4c0244a3dd8b03c1552">
+<index version="1" name="VF Reascripts and JSFX" commit="b6d5abb63765785418b6f1d28a1f9926513a9b25">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -28,6 +28,27 @@
       </metadata>
       <version name="1.0" author="VF" time="2023-05-24T21:55:10Z">
         <source main="main">https://github.com/Infrabass/Reascripts/raw/10534ef5ebf7c2466a0138db73c1621b3cd7748e/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="VARIOUS">
+    <reapack name="VF - VARIOUS - Quick Access - Fav FX.lua" type="script">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Quick Access - Fav FX\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Popup menu for favorite FX\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Can also be used to trigger any other actions\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Open the script in a text editor to read the instructions and customize your popup menu\sa180\par}
+}
+]]></description>
+        <link rel="website">https://github.com/Infrabass/Reascripts</link>
+      </metadata>
+      <version name="1.0" author="VF" time="2023-05-25T04:02:41Z">
+        <changelog><![CDATA[Initial release]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/b6d5abb63765785418b6f1d28a1f9926513a9b25/VARIOUS/VF%20-%20VARIOUS%20-%20Quick%20Access%20-%20Fav%20FX.lua</source>
       </version>
     </reapack>
   </category>
