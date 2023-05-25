@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF Reascripts and JSFX" commit="b6d5abb63765785418b6f1d28a1f9926513a9b25">
+<index version="1" name="VF Reascripts and JSFX" commit="061131bf6b601d75687134b101c4db84731d29a7">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -19,7 +19,7 @@
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support moving envelope points with items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support NVK folder items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\sa180\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Dependencies\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 Dependencies\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
 }
 ]]></description>
@@ -28,6 +28,26 @@
       </metadata>
       <version name="1.0" author="VF" time="2023-05-24T21:55:10Z">
         <source main="main">https://github.com/Infrabass/Reascripts/raw/10534ef5ebf7c2466a0138db73c1621b3cd7748e/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="PROJECT">
+    <reapack name="VF - PROJECT - Switch project sample rate.lua" type="script">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Switch project sample rate\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Quickly switch project sample rate via a popup menu\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Pretty handy when added to the main toolbar\sa180\par}
+}
+]]></description>
+        <link rel="website">https://github.com/Infrabass/Reascripts</link>
+      </metadata>
+      <version name="1.0" author="VF" time="2023-05-25T04:49:51Z">
+        <changelog><![CDATA[Initial release]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/061131bf6b601d75687134b101c4db84731d29a7/PROJECT/VF%20-%20PROJECT%20-%20Switch%20project%20sample%20rate.lua</source>
       </version>
     </reapack>
   </category>
