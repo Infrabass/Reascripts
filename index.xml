@@ -41,7 +41,12 @@
 \widowctrl\hyphauto
 
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 VF Reacripts & JSFX repository\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 To fill\u8230?\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Collection of scripts and jsfx from Vincent Fliniaux\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Installation\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Copy and paste this URL in Extensions > ReaPack > Import a repository: {\field{\*\fldinst{HYPERLINK "https://github.com/Infrabass/Reascripts/raw/master/index.xml"}}{\fldrslt{\ul
+https://github.com/ReaTeam/ReaScripts/raw/master/index.xml
+}}}
+\par}
 }
 ]]></description>
   </metadata>
