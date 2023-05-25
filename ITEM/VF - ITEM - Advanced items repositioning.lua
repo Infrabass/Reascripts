@@ -40,7 +40,6 @@ function CheckFloatEquality(a,b)
 	return (math.abs(a-b)<0.00001)
 end
 
---sort_func = function(a,b)
 function sort_func(a,b)
 	if (a.pos == b.pos) then
 		return a.track < b.track
@@ -65,12 +64,8 @@ function PrintWindowSize()
 	Print(w.."\n"..h)		
 end
 
-------------------------------------------------------------------------------------
--- SECONDARY FUNCTIONS
-------------------------------------------------------------------------------------
-
 function StripNumbersAndExtensions(take_name)
-	if not string.match(take_name, "L_%d$") then -- If take name is not with layers at the end (like sfx_blabla_L1)
+	if not string.match(take_name, "L_%d$") then -- If take name doesn't end with layers suffix at the end (like sfx_blabla_L1)
 		if string.match(take_name, "_%d+$") then
 			take_name = string.gsub(take_name, "_%d+$", "")
 		elseif string.match(take_name, "_%d+%.%a+$") then
@@ -85,6 +80,10 @@ function StripNumbersAndExtensions(take_name)
 	end
 	return take_name
 end
+
+------------------------------------------------------------------------------------
+-- SECONDARY FUNCTIONS
+------------------------------------------------------------------------------------
 
 function ResetSavedParameters()
 	reaper.SetExtState("vf_reposition_items", "interval_sec", "", true)
@@ -856,15 +855,6 @@ function Frame()
 		if realtime == true then
 			ForceSelectItems()
 		end
-
-		--[[
-		-- Stop realtime mode if user undo last item repositioning
-		local proj_state = reaper.GetProjectStateChangeCount(0)		
-		if proj_state ~= proj_previous_state then
-			realtime = false
-		end
-		proj_previous_state = proj_state
-		]]
 		reaper.ImGui_SameLine(ctx)
 
 		-- Overlap & Adjacent Buttons
