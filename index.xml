@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF Reascripts and JSFX" commit="061131bf6b601d75687134b101c4db84731d29a7">
+<index version="1" name="VF_ReaScripts" commit="061131bf6b601d75687134b101c4db84731d29a7">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
