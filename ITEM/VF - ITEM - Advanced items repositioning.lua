@@ -2,8 +2,8 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author VF
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.0
--- @Changelog Initial release
+-- @Version 1.0.1
+-- @Changelog Fix wrong positions with adjacent folder items
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
@@ -108,7 +108,7 @@ function SaveInitialState()
         if item ~= nil then
         	if FI_IsFolderItem(item) then
         		FI_detected = true
-        		FI_SelectChildrenItems(item)
+        		FI_MarkOrSelectChildrenItems(item, true)
         	end
             t_initial[i].item = item
             t_initial[i].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
@@ -185,9 +185,9 @@ function RepositionItems(item, pos)
 	Unsel_item()
 	reaper.SetMediaItemSelected(item, 1)
 	if FI_IsFolderItem(item) then
-		FI_SelectChildrenItems(item)
+		FI_MarkOrSelectChildrenItems(item, true)
 	end
-	SelectOverlappingItems(item)
+	MarkOrSelectOverlappingItems(item, true)
 	reaper.SetEditCurPos(pos, 0, 0)
 	Command(41205) -- Item edit: Move position of item to edit cursor
 end
@@ -221,9 +221,9 @@ function GetItemPos()
 			local _, item_mark = reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "", 0)
 			if item_mark ~= "Skip" then
 				if FI_IsFolderItem(item) then
-					FI_MarkChildrenItems(item)
+					FI_MarkOrSelectChildrenItems(item, false)
 				end
-				local total_len = GetOverlappingItemsEndPosAndMark(item)
+				local total_len = MarkOrSelectOverlappingItems(item, false)
 				local track = reaper.GetMediaItem_Track(item)
 				t[counter] = {}				
 				t[counter].item = item
@@ -249,9 +249,9 @@ function GetTrackItemPos(track)
 				local _, item_mark = reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "", 0)
 				if item_mark ~= "Skip" then
 					if FI_IsFolderItem(item) then
-						FI_MarkChildrenItems(item)
+						FI_MarkOrSelectChildrenItems(item, false)
 					end
-					local total_len = GetOverlappingItemsEndPosAndMark(item)
+					local total_len = MarkOrSelectOverlappingItems(item, false)
 					t[counter] = {}
 					t[counter].item = item
 					t[counter].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
@@ -276,8 +276,8 @@ function FI_IsFolderItem(item)
 	end
 end
 
-function FI_GetChildrenItems(item)
-    local ar_child_items = {}
+function FI_MarkOrSelectChildrenItems(item, select)
+    --local ar_child_items = {}
     
     local parentTrack = reaper.GetMediaItem_Track(item)
     local columnStart = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
@@ -294,8 +294,13 @@ function FI_GetChildrenItems(item)
                 local item = reaper.GetTrackMediaItem(track, i)
                 local itemPos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
                 local itemEnd = itemPos + reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
-                if (itemPos >= columnStart and itemPos + 0.00001 < columnEnd) or (itemEnd - 0.0001 > columnStart and itemEnd <= columnEnd) then
-                    ar_child_items[#ar_child_items+1] = item
+                if (itemPos >= columnStart and itemPos + 0.00001 < columnEnd) or (itemEnd - 0.0001 > columnStart and itemEnd <= columnEnd) then                	
+                    --ar_child_items[#ar_child_items+1] = item
+                    if select == true then
+                    	reaper.SetMediaItemSelected(item, 1)
+                    else
+                    	reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "Skip", 1)
+                    end
                 end
             end
             trackidx = trackidx + 1
@@ -306,25 +311,11 @@ function FI_GetChildrenItems(item)
             depth = reaper.GetTrackDepth(track)
         end
     end
-    return ar_child_items
+    --return ar_child_items
 end
 
-function FI_MarkChildrenItems(item)
-	local t_child_items = FI_GetChildrenItems(item)
-	for i=1, #t_child_items do
-		reaper.GetSetMediaItemInfo_String(t_child_items[i], "P_EXT:vf_reposition_items", "Skip", 1)
-	end
-end
-
-function FI_SelectChildrenItems(item)
-	local t_child_items = FI_GetChildrenItems(item)
-	for i=1, #t_child_items do
-		reaper.SetMediaItemSelected(t_child_items[i], 1)
-	end
-end
-
-function GetOverlappingItems(item)
-	local t_overlap_items = {}
+function MarkOrSelectOverlappingItems(item, select)
+	--local t_overlap_items = {}
 	local item_start = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
 	local item_len = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
 	local item_end = item_start + item_len
@@ -341,13 +332,35 @@ function GetOverlappingItems(item)
 		local item_check_end = item_check_start + reaper.GetMediaItemInfo_Value(item_check, "D_LENGTH")
 		if overlap == true then
 			if (item_check_start >= item_start and item_check_start + 0.00001 < last_end) then
-				t_overlap_items[counter] = item_check
+				--t_overlap_items[counter] = item_check
+				if select == true then
+					reaper.SetMediaItemSelected(item_check, 1)
+					if FI_IsFolderItem(item_check) then
+						FI_MarkOrSelectChildrenItems(item_check, true)
+					end
+				else
+					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
+					if FI_IsFolderItem(item_check) then
+						FI_MarkOrSelectChildrenItems(item_check, false)
+					end
+				end
 				extend_len = true
 			end
 		end		
 		if adjacent == true then
-			if CheckFloatEquality(item_check_start, item_end) then
-				t_overlap_items[counter] = item_check
+			if CheckFloatEquality(item_check_start, last_end) then
+				--t_overlap_items[counter] = item_check			
+				if select == true then
+					reaper.SetMediaItemSelected(item_check, 1)
+					if FI_IsFolderItem(item_check) then
+						FI_MarkOrSelectChildrenItems(item_check, true)
+					end
+				else
+					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
+					if FI_IsFolderItem(item_check) then
+						FI_MarkOrSelectChildrenItems(item_check, false)
+					end
+				end				
 				extend_len = true
 			end
 		end
@@ -359,22 +372,8 @@ function GetOverlappingItems(item)
 		total_len = last_end - item_start
 		counter = counter + 1
 	end
-	return t_overlap_items, total_len
-end
-
-function GetOverlappingItemsEndPosAndMark(item)
-	local t_overlap_items, total_len = GetOverlappingItems(item)
-	for i=1, #t_overlap_items do
-		reaper.GetSetMediaItemInfo_String(t_overlap_items[i], "P_EXT:vf_reposition_items", "Skip", 1)
-	end
+	--return t_overlap_items, total_len
 	return total_len
-end
-
-function SelectOverlappingItems(item)
-	local t_overlap_items = GetOverlappingItems(item)
-	for i=1, #t_overlap_items do
-		reaper.SetMediaItemSelected(t_overlap_items[i], 1)
-	end
 end
 
 ------------------------------------------------------------------------------------
