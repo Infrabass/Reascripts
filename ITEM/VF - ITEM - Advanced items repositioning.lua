@@ -6,22 +6,20 @@
 -- @Changelog Initial release
 -- @About 
 --   # Advanced items repositioning
---  
 --   - Use start or end of items to reposition
 --   - 3 modes:
---      - Track
---      - Queue
---      - Timeline
+--      TRACK
+--      QUEUE
+--      TIMELINE
 --   - Set interval between items in seconds, frames or beats
---   - Optinally add time offset between groups of items with the same name
---   - Non-linear factor to create rallentendo & acceleratendo
+--   - Optionally add time offset between groups of items with the same name
+--   - Non-linear factor to create rallentando & accelerando
 --   - Toggle to preserve overlapping items
 --   - Toggle to preserve adjacent items
---   - Realtime mode to tweak parameters and see result in realtime
+--   - Realtime mode to visualize result in realtime
 --   - Support moving envelope points with items
 --   - Support NVK folder items
---   - Support ripple editing
---   - Option to save last used settings
+--   - Support ripple edit
 --   
 --   # Dependencies
 --   - Requires ReaImGui
