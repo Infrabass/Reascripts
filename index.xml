@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF Reascripts and JSFX" commit="6794930145d5e0bf73b60e4efb840b6e459bef14">
+<index version="1" name="VF Reascripts and JSFX" commit="16d01d1dcefafa2d54d52b8acc7ca013d8ab201b">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -9,20 +9,16 @@
 
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Advanced items repositioning\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Use start or end of items to reposition\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab 3 modes:\par}
-{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Track\par}
-{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Queue\par}
-{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Timeline\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab 3 modes: TRACK QUEUE TIMELINE\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Set interval between items in seconds, frames or beats\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Optinally add time offset between groups of items with the same name\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Non-linear factor to create rallentendo & acceleratendo\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Optionally add time offset between groups of items with the same name\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Non-linear factor to create rallentando & accelerando\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve overlapping items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve adjacent items\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Realtime mode to tweak parameters and see result in realtime\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Realtime mode to visualize result in realtime\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support moving envelope points with items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support NVK folder items\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple editing\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Option to save last used settings\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Dependencies\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
 }
@@ -43,10 +39,7 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 VF Reacripts & JSFX repository\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Collection of scripts and jsfx from Vincent Fliniaux\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Installation\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Copy and paste this URL in Extensions > ReaPack > Import a repository: {\field{\*\fldinst{HYPERLINK "https://github.com/Infrabass/Reascripts/raw/master/index.xml"}}{\fldrslt{\ul
-https://github.com/ReaTeam/ReaScripts/raw/master/index.xml
-}}}
-\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Copy and paste this URL in Extensions > ReaPack > Import a repository: https://github.com/Infrabass/Reascripts/raw/master/index.xml\par}
 }
 ]]></description>
   </metadata>
