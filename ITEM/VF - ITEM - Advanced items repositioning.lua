@@ -7,10 +7,7 @@
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
---   - 3 modes:
---      TRACK
---      QUEUE
---      TIMELINE
+--   - 3 modes: TRACK, QUEUE & TIMELINE
 --   - Set interval between items in seconds, frames or beats
 --   - Optionally add time offset between groups of items with the same name
 --   - Non-linear factor to create rallentando & accelerando
