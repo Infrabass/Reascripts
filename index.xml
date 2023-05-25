@@ -1,8 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF Reascripts and JSFX" commit="8a5d574deeb54e58088c8f08eb46711c433d2bb2">
+<index version="1" name="VF Reascripts and JSFX" commit="6794930145d5e0bf73b60e4efb840b6e459bef14">
   <category name="ITEM">
-    <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script" desc="Advanced items repositioning">
+    <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Advanced items repositioning\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Use start or end of items to reposition\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab 3 modes:\par}
+{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Track\par}
+{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Queue\par}
+{\pard \ql \f0 \sa0 \li720 \fi-360 \endash \tx360\tab Timeline\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Set interval between items in seconds, frames or beats\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Optinally add time offset between groups of items with the same name\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Non-linear factor to create rallentendo & acceleratendo\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve overlapping items\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve adjacent items\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Realtime mode to tweak parameters and see result in realtime\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support moving envelope points with items\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support NVK folder items\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple editing\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Option to save last used settings\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Dependencies\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
+}
+]]></description>
         <link rel="website">https://github.com/Infrabass/Reascripts</link>
         <link rel="screenshot">https://imgur.com/vI4pc5B</link>
       </metadata>
