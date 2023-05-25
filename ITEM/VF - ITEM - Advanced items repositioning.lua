@@ -18,8 +18,15 @@
 --   - Support NVK folder items
 --   - Support ripple edit
 --   
---   # Dependencies
+--   ## Dependencies
 --   - Requires ReaImGui
+
+
+--[[
+Special thanks to
+- Nvk for the envelope points hack and autorisation to release with Folder Items support
+- Cfillion for the help with ReaImGui and ReaPack setup (this is my first script released via my repository, woot woot!)
+]]
 
 ------------------------------------------------------------------------------------
 -- UTILITIES
