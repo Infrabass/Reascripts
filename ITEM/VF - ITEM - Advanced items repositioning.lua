@@ -2,8 +2,11 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author VF
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.0.1
--- @Changelog Fix wrong positions with adjacent folder items
+-- @Version 1.2
+-- @Changelog
+--   Time interval can now be set in seconds, frames or beats
+--   Add buttons to preserve overlapping & adjacent items 
+--   UI improvements
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
@@ -840,7 +843,7 @@ function Frame()
 		reaper.ImGui_Dummy(ctx, 0, 0)
 
 		-- Realtime Button
-		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.7)
+		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.5)
 		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
 		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
 		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
