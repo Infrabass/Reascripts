@@ -2,7 +2,7 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author VF
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version v1.2.1
+-- @Version 1.2.1
 -- @Changelog
 --   Add warning message if user starts the script with zero or one selected item
 --   Remove option to resize the window
