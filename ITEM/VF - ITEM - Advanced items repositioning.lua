@@ -2,11 +2,10 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author VF
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.2
+-- @Version v1.2.1
 -- @Changelog
---   Time interval can now be set in seconds, frames or beats
---   Add buttons to preserve overlapping & adjacent items 
---   UI improvements
+--   Add warning message if user starts the script with zero or one selected item
+--   Remove option to resize the window
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
@@ -16,7 +15,7 @@
 --   - Non-linear factor to create rallentando & accelerando
 --   - Toggle to preserve overlapping items
 --   - Toggle to preserve adjacent items
---   - Realtime mode to visualize result in realtime
+--   - Realtime mode
 --   - Support moving envelope points with items
 --   - Support NVK folder items
 --   - Support ripple edit
@@ -29,6 +28,18 @@
 Special thanks to
 - Nvk for the envelope points hack and autorisation to release with Folder Items support
 - Cfillion for the help with ReaImGui and ReaPack setup (this is my first script released via my repository, woot woot!)
+]]
+
+
+--[[
+Full Changelog:
+	v1.2.1
+		+ Add warning message if user starts the script with zero or one selected item
+		+ Remove option to resize the window
+	v1.2
+		+ Time interval can now be set in seconds, frames or beats
+		+ Add buttons to preserve overlapping & adjacent items 
+		+ UI improvements		 
 ]]
 
 ------------------------------------------------------------------------------------
@@ -962,8 +973,7 @@ function Loop()
 	reaper.ImGui_PushFont(ctx, font)
 	reaper.ImGui_SetNextWindowSize(ctx, 309, 293, reaper.ImGui_Cond_FirstUseEver()) 
 	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_WindowRounding(), 10, val2In)
-	--visible, open = reaper.ImGui_Begin(ctx, 'Items Reposition', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize())	
-	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse())
+	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize())	
 	if visible then
 		Frame()
 		if apply == true or (realtime == true and update_items == true) then	
@@ -975,7 +985,7 @@ function Loop()
 	reaper.ImGui_PopStyleVar(ctx, 1)
 
 	if cancel then
-		RestoreInitialState()
+		RestoreInitialState()		
 	end
 
 	if open then
@@ -989,7 +999,10 @@ reaper.Undo_BeginBlock2(0)
 --local start = reaper.time_precise()
 
 count_sel_items = reaper.CountSelectedMediaItems(0)
-if count_sel_items < 1 then return end	
+if count_sel_items < 1 then
+	reaper.ShowMessageBox("Please, select at least two items to use this script", "Advanced items repositioning", 0)
+	return
+end	
 
 if Init() == true then
 	reaper.defer(Loop)
