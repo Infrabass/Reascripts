@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="4a4e645978a85f59452ad8a9d30dff5bd69e14e9">
+<index version="1" name="VF_ReaScripts" commit="1bb508662c28ae3b0e284bebb4bc5a9b9e904774">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -43,6 +43,10 @@ UI improvements]]></changelog>
         <changelog><![CDATA[Add warning message if user starts the script with zero or one selected item
 Remove option to resize the window]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/4a4e645978a85f59452ad8a9d30dff5bd69e14e9/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+      </version>
+      <version name="1.2.2" author="VF" time="2023-06-01T18:16:08Z">
+        <changelog><![CDATA[Drastically improved repositioning speed, up to 100 times faster!]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/1bb508662c28ae3b0e284bebb4bc5a9b9e904774/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
       </version>
     </reapack>
   </category>
