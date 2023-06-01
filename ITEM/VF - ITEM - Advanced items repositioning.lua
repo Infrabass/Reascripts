@@ -2,10 +2,9 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author VF
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.2.1
+-- @Version 1.2.2
 -- @Changelog
---   Add warning message if user starts the script with zero or one selected item
---   Remove option to resize the window
+--   Drastically improved repositioning speed, up to 100 times faster!
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
@@ -39,7 +38,10 @@ Full Changelog:
 	v1.2
 		+ Time interval can now be set in seconds, frames or beats
 		+ Add buttons to preserve overlapping & adjacent items 
-		+ UI improvements		 
+		+ UI improvements	
+	v1.2.1
+		+ Add warning message if user starts the script with zero or one selected item
+		+ Remove option to resize the window			 
 ]]
 
 ------------------------------------------------------------------------------------
@@ -127,7 +129,7 @@ function SaveInitialState()
             t_initial[i].item = item
             t_initial[i].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
         end
-    end
+    end 
 end
 
 function RestoreInitialState()	
@@ -179,9 +181,11 @@ function SaveItemSelection()
 end
 
 function Unsel_item()
-	for i=1, #t_initial_selection do
-		local item = t_initial_selection[i]
+	local offset = 0
+	for i=0, reaper.CountSelectedMediaItems(0)-1 do
+		local item = reaper.GetSelectedMediaItem(0, i-offset)
 		reaper.SetMediaItemSelected(item, 0)
+		offset = offset + 1
 	end
 end
 
@@ -200,7 +204,7 @@ function RepositionItems(item, pos)
 	reaper.SetMediaItemSelected(item, 1)
 	if FI_IsFolderItem(item) then
 		FI_MarkOrSelectChildrenItems(item, true)
-	end
+	end	
 	MarkOrSelectOverlappingItems(item, true)
 	reaper.SetEditCurPos(pos, 0, 0)
 	Command(41205) -- Item edit: Move position of item to edit cursor
@@ -222,7 +226,7 @@ function SaveSelItemsTracks()
 		if skip == 0 then
 			table.insert(t, track)
 		end
-	end
+	end	
 	return t
 end
 
@@ -359,6 +363,8 @@ function MarkOrSelectOverlappingItems(item, select)
 					end
 				end
 				extend_len = true
+			else
+				break
 			end
 		end		
 		if adjacent == true then
@@ -376,6 +382,8 @@ function MarkOrSelectOverlappingItems(item, select)
 					end
 				end				
 				extend_len = true
+			else
+				break
 			end
 		end
 		if extend_len == true then
@@ -386,7 +394,7 @@ function MarkOrSelectOverlappingItems(item, select)
 		total_len = last_end - item_start
 		counter = counter + 1
 	end
-	--return t_overlap_items, total_len
+	--return t_overlap_items, total_len	
 	return total_len
 end
 
@@ -563,7 +571,7 @@ function Main(interval, offset, non_linear)
 		for j=2, #item_list do
 			local item = item_list[j].item
 			RepositionItems(item_list[j].item, item_list[j].pos + 10000000)
-		end
+		end						
 
 		-- Reposition item & restore snapoffset
 		for j=1, #item_list do
@@ -933,7 +941,7 @@ function Frame()
 			update_items = true
 		end
 
-		if count_sel_items > 250 then
+		if count_sel_items > 1500 then
 			if rv_non_linear then update_items = true end
 		else
 			if previous_non_linear ~= non_linear then update_items = true end
