@@ -8,7 +8,7 @@
 --   Few other small improvements
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
---   VF - ITEM - Advanced items repositioning - last values without GUI.lua
+--   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
