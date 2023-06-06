@@ -7,8 +7,8 @@
 --   Add a button in settings tab to automatically generate a script without GUI using the current values (useful save presets or use in custom actions)
 --   Few other small improvements
 -- @Provides
---   [main] . > VF - ITEM - Advanced items repositioning.lua
---   . > VF - ITEM - Advanced items repositioning - last values without GUI.lua
+--   [main] VF - ITEM - Advanced items repositioning.lua
+--   VF - ITEM - Advanced items repositioning - last values without GUI.lua
 -- @About 
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
