@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="a44295e0423699a2dd87610886cff15fe8f3932c">
+<index version="1" name="VF_ReaScripts" commit="6814083689377fbf692f7e1644fda10eaf664f36">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -18,7 +18,8 @@
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Realtime mode\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support moving envelope points with items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support NVK folder items\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Can generate no GUI scripts using current values (useful to save presets or use in custom actions)\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 Dependencies\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
 }
