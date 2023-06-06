@@ -2,10 +2,9 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.3
+-- @Version 1.3.1
 -- @Changelog
---   Add a button in settings tab to automatically generate a script without GUI using the current values (useful save presets or use in custom actions)
---   Few other small improvements
+--   Fix the no GUI script feature
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -39,6 +38,7 @@ Special thanks to
 Full Changelog:
 	v1.3
 		+ Add a button in settings tab to automatically generate a script without GUI using the current values (useful to add in custom actions)
+		+ Few other small improvements
 	v1.2.2
 		+ Drastically improved repositioning speed, up to 100 times faster!
 	v1.2.1
