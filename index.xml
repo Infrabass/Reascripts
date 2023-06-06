@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="1bb508662c28ae3b0e284bebb4bc5a9b9e904774">
+<index version="1" name="VF_ReaScripts" commit="a44295e0423699a2dd87610886cff15fe8f3932c">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -47,6 +47,12 @@ Remove option to resize the window]]></changelog>
       <version name="1.2.2" author="VF" time="2023-06-01T18:16:08Z">
         <changelog><![CDATA[Drastically improved repositioning speed, up to 100 times faster!]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/1bb508662c28ae3b0e284bebb4bc5a9b9e904774/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+      </version>
+      <version name="1.3" author="Vincent Fliniaux (Infrabass)" time="2023-06-06T19:11:32Z">
+        <changelog><![CDATA[Add a button in settings tab to automatically generate a script without GUI using the current values (useful to add in custom actions)
+Few other small improvements]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/a44295e0423699a2dd87610886cff15fe8f3932c/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source main="main" file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/a44295e0423699a2dd87610886cff15fe8f3932c/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
       </version>
     </reapack>
   </category>
