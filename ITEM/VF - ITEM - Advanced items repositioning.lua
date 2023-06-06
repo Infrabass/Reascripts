@@ -4,7 +4,7 @@
 -- @Links https://github.com/Infrabass/Reascripts
 -- @Version 1.3
 -- @Changelog
---   Add a button in settings tab to automatically generate a script without GUI using the current values (useful to add in custom actions)
+--   Add a button in settings tab to automatically generate a script without GUI using the current values (useful save presets or use in custom actions)
 --   Few other small improvements
 -- @Provides
 --   [main] . > VF - ITEM - Advanced items repositioning.lua
@@ -22,6 +22,7 @@
 --   - Support moving envelope points with items
 --   - Support NVK folder items
 --   - Support ripple edit
+--   - Can generate no GUI scripts using current values (useful to save presets or use in custom actions)
 --   
 --   ## Dependencies
 --   - Requires ReaImGui
