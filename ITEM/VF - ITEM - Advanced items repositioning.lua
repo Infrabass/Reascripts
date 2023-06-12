@@ -2,9 +2,9 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.3.1
+-- @Version 1.3.2
 -- @Changelog
---   Fix the no GUI script feature
+--   Disable docking to avoid wrong size when undocked
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -36,6 +36,10 @@ Special thanks to
 
 --[[
 Full Changelog:
+	v1.3.2
+		+ Disable docking to avoid wrong size when undocked
+	v1.3.1
+		+ Fix the no GUI script feature
 	v1.3
 		+ Add a button in settings tab to automatically generate a script without GUI using the current values (useful to add in custom actions)
 		+ Few other small improvements
@@ -769,7 +773,13 @@ function GenerateScript(interval_sec, interval_frame, interval_beats, interval_m
 	local str10 = 'reaper.SetExtState("vf_reposition_items", "adjacent_noGUI", tostring('.. tostring(adjacent) ..'), true)\n'
 	local str11 = 'reaper.SetExtState("vf_reposition_items", "disable_autoxfade_noGUI", tostring('.. tostring(disable_autoxfade) ..'), true)\n'
 	local string_final = [=[local script_path = debug.getinfo(1,'S').source:match[[^@?(.*[\/])[^\/]-$]]
-dofile(script_path .. "VF - ITEM - Advanced items repositioning - last values without GUI.lua")]=]	
+local path = script_path .. "VF - ITEM - Advanced items repositioning - last values without GUI.lua"
+if reaper.file_exists(path) then
+	dofile(script_path .. "VF - ITEM - Advanced items repositioning - last values without GUI.lua")
+else
+	reaper.ShowMessageBox("Failed to run Advanced items repositioning script without GUI, please re-install the script in ReaPack", "ERROR", 0)
+end
+]=]	
 
 	local file, err = io.open(script_name, "w+")
 	if not file then
@@ -1076,7 +1086,7 @@ function Loop()
 	reaper.ImGui_PushFont(ctx, font)
 	reaper.ImGui_SetNextWindowSize(ctx, 309, 293, reaper.ImGui_Cond_FirstUseEver()) 
 	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_WindowRounding(), 10, val2In)
-	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize())	
+	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize() | reaper.ImGui_WindowFlags_NoDocking())	
 	if visible then
 		Frame()
 		if apply == true or (realtime == true and update_items == true) then	
