@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="c969b9b3e29ada7bcbea783e4cf1120e247c08f0">
+<index version="1" name="VF_ReaScripts" commit="7ca5db41f2fa4b171476f417cf075068ed2dcc33">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -59,6 +59,11 @@ Few other small improvements]]></changelog>
         <changelog><![CDATA[Fix the no GUI script feature]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/c969b9b3e29ada7bcbea783e4cf1120e247c08f0/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
         <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/c969b9b3e29ada7bcbea783e4cf1120e247c08f0/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
+      </version>
+      <version name="1.3.2" author="Vincent Fliniaux (Infrabass)" time="2023-06-12T21:32:12Z">
+        <changelog><![CDATA[Disable docking to avoid wrong size when undocked]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/7ca5db41f2fa4b171476f417cf075068ed2dcc33/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/7ca5db41f2fa4b171476f417cf075068ed2dcc33/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
       </version>
     </reapack>
   </category>
