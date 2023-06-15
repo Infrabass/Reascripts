@@ -2,9 +2,10 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.3.2
+-- @Version 1.3.3
 -- @Changelog
---   Disable docking to avoid wrong size when undocked
+--   Group offset: add option to ignore suffix numbering and extension in item's name
+--   A bunch of small fixes
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -36,6 +37,9 @@ Special thanks to
 
 --[[
 Full Changelog:
+	v1.3.3
+		+ Group offset: add option to ignore suffix numbering and extension in item's name
+		+ A bunch of small fixes
 	v1.3.2
 		+ Disable docking to avoid wrong size when undocked
 	v1.3.1
@@ -504,7 +508,11 @@ function Init()
 	disable_autoxfade = reaper.GetExtState("vf_reposition_items_settings", "disable_autoxfade")
 	if disable_autoxfade == "" then disable_autoxfade = nil end
 	if disable_autoxfade == "true" then disable_autoxfade = true end
-	if disable_autoxfade == "false" then disable_autoxfade = false end	
+	if disable_autoxfade == "false" then disable_autoxfade = false end
+	group_offset_option = reaper.GetExtState("vf_reposition_items_settings", "group_offset_option")
+	if group_offset_option == "" then group_offset_option = nil end
+	if group_offset_option == "true" then group_offset_option = true end
+	if group_offset_option == "false" then group_offset_option = false end		
 	hide_tooltip = reaper.GetExtState("vf_reposition_items_settings", "hide_tooltip")	
 	if hide_tooltip == "" then hide_tooltip = nil end		
 	if hide_tooltip == "true" then hide_tooltip = true end
@@ -559,7 +567,10 @@ function Main(interval, offset, non_linear)
 
 			-- Add position offset if new group of item is detected (different take name)
 			if offset_state == true then
-				local take_name = StripNumbersAndExtensions(reaper.GetTakeName(reaper.GetActiveTake(item)))
+				local take_name = reaper.GetTakeName(reaper.GetActiveTake(item))
+				if group_offset_option == true then
+					take_name = StripNumbersAndExtensions(take_name)
+				end
 				if previous_take_name and (take_name ~= previous_take_name) then
 					diff_name_offset = diff_name_offset + offset   
 					interval = init_interval                  
@@ -771,7 +782,8 @@ function GenerateScript(interval_sec, interval_frame, interval_beats, interval_m
 	local str8 = 'reaper.SetExtState("vf_reposition_items", "mode_val_noGUI", '.. tostring(mode_val) ..', true)\n'
 	local str9 = 'reaper.SetExtState("vf_reposition_items", "overlap_noGUI", tostring('.. tostring(overlap) ..'), true)\n'
 	local str10 = 'reaper.SetExtState("vf_reposition_items", "adjacent_noGUI", tostring('.. tostring(adjacent) ..'), true)\n'
-	local str11 = 'reaper.SetExtState("vf_reposition_items", "disable_autoxfade_noGUI", tostring('.. tostring(disable_autoxfade) ..'), true)\n'
+	local str11 = 'reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade_noGUI", tostring('.. tostring(disable_autoxfade) ..'), true)\n'
+	local str12 = 'reaper.SetExtState("vf_reposition_items_settings", "group_offset_option_noGUI", tostring('.. tostring(group_offset_option) ..'), true)\n'
 	local string_final = [=[local script_path = debug.getinfo(1,'S').source:match[[^@?(.*[\/])[^\/]-$]]
 local path = script_path .. "VF - ITEM - Advanced items repositioning - last values without GUI.lua"
 if reaper.file_exists(path) then
@@ -787,7 +799,7 @@ end
 		return 
 	end
 
-	file:write(string_info..str1..str2..str3..str4..str5..str6..str7..str8..str9..str10..str11..string_final)
+	file:write(string_info..str1..str2..str3..str4..str5..str6..str7..str8..str9..str10..str11..str12..string_final)
 	io.close()
 
 	reaper.AddRemoveReaScript(true, 0, script_name, true )    
@@ -803,20 +815,21 @@ function Frame()
 	if not interval_frame then interval_frame = 1 end
 	if not interval_beats then interval_beats = 5 end
 	if not interval_mode then interval_mode = 0 end
-	if not offset_state then offset_state = false end
+	if offset_state == nil then offset_state = false end
 	if not non_linear_default_value then non_linear_default_value = 1 end
 	if not non_linear then non_linear = non_linear_default_value end
 	if not reset then reset = {} end
 	if not toggle_val then toggle_val = 1 end
 	if not mode_val then mode_val = 0 end
-	if not overlap then overlap = false end
-	if not adjacent then adjacent = false end
-	if not apply then apply = false end
-	if not realtime then realtime = false end
-	if not save_settings then save_settings = false end	
-	if not close_window then close_window = false end
-	if not disable_autoxfade then disable_autoxfade = false end
-	if not hide_tooltip then hide_tooltip = false end	
+	if overlap == nil then overlap = false end
+	if adjacent == nil then adjacent = false end
+	if apply == nil then apply = false end
+	if realtime == nil then realtime = false end
+	if save_settings == nil then save_settings = false end	
+	if close_window == nil then close_window = false end
+	if disable_autoxfade == nil then disable_autoxfade = true end
+	if group_offset_option == nil then group_offset_option = true end
+	if hide_tooltip == nil then hide_tooltip = false end	
 
 	-- Check if item selection have changed, if yes save new initial state to restore if cancel button is clicked
 	local t_current_selection = SaveItemSelection()
@@ -905,7 +918,7 @@ function Frame()
 			reaper.SetExtState("vf_reposition_items", "offset_state", tostring(offset_state), true)
 		end
 		offset = offset_val
-		if offset_state == false then offset = 0 end		
+		if offset_state == false then offset = 0 end	
 		reaper.ImGui_Dummy(ctx, 0, 0)
 
 		--- Non-linear factor horizontal float
@@ -1058,7 +1071,12 @@ function Frame()
 		rv, close_window = reaper.ImGui_Checkbox(ctx, "Close window after applying or cancelling", close_window)
 		reaper.SetExtState("vf_reposition_items_settings", "close_window", tostring(close_window), true)
 		rv, disable_autoxfade = reaper.ImGui_Checkbox(ctx, "Disable auto-crossfade", disable_autoxfade)
-		reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true)		
+		reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true)	
+		rv, group_offset_option = reaper.ImGui_Checkbox(ctx, "Group offset mode", group_offset_option)
+		if hide_tooltip == false then
+			ToolTip("If active, group offset detection will ignore suffix numbering and extension in item's name")
+		end
+		reaper.SetExtState("vf_reposition_items_settings", "group_offset_option", tostring(group_offset_option), true)				
 		rv, hide_tooltip = reaper.ImGui_Checkbox(ctx, "Hide help tooltip", hide_tooltip)
 		reaper.SetExtState("vf_reposition_items_settings", "hide_tooltip", tostring(hide_tooltip), true)
 		reaper.ImGui_Dummy(ctx, 0, 4)

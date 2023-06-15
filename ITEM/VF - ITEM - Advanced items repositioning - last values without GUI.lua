@@ -425,17 +425,23 @@ function Init()
 	if disable_autoxfade == "true" then disable_autoxfade = true end
 	if disable_autoxfade == "false" then disable_autoxfade = false end	
 
+	group_offset_option = reaper.GetExtState("vf_reposition_items_settings", "group_offset_option_noGUI")
+	if group_offset_option == "" then group_offset_option = nil end
+	if group_offset_option == "true" then group_offset_option = true end
+	if group_offset_option == "false" then group_offset_option = false end		
+
 	if not interval_sec then interval_sec = 1 end
 	if not interval_frame then interval_frame = 1 end
 	if not interval_beats then interval_beats = 5 end
 	if not interval_mode then interval_mode = 0 end
-	if not offset_state then offset_state = false end
+	if offset_state == nil then offset_state = false end
 	if not offset_val then offset_val = 3 end	
 	if not toggle_val then toggle_val = 1 end
 	if not mode_val then mode_val = 0 end
-	if not overlap then overlap = false end
-	if not adjacent then adjacent = false end
-	if not disable_autoxfade then disable_autoxfade = false end
+	if overlap == nil then overlap = false end
+	if adjacent == nil then adjacent = false end
+	if disable_autoxfade == nil then disable_autoxfade = true end
+	if group_offset_option == nil then group_offset_option = true end
 
 	return true
 end
@@ -512,7 +518,10 @@ function Main()
 
 			-- Add position offset if new group of item is detected (different take name)
 			if offset_state == true then
-				local take_name = StripNumbersAndExtensions(reaper.GetTakeName(reaper.GetActiveTake(item)))
+				local take_name = reaper.GetTakeName(reaper.GetActiveTake(item))
+				if group_offset_option == true then
+					take_name = StripNumbersAndExtensions(take_name)
+				end
 				if previous_take_name and (take_name ~= previous_take_name) then
 					diff_name_offset = diff_name_offset + offset                    
 				end
