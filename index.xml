@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="7ca5db41f2fa4b171476f417cf075068ed2dcc33">
+<index version="1" name="VF_ReaScripts" commit="5fcb777f85b2e3c838ee078d9d4f3cdde1734a46">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -64,6 +64,12 @@ Few other small improvements]]></changelog>
         <changelog><![CDATA[Disable docking to avoid wrong size when undocked]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/7ca5db41f2fa4b171476f417cf075068ed2dcc33/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
         <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/7ca5db41f2fa4b171476f417cf075068ed2dcc33/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
+      </version>
+      <version name="1.3.3" author="Vincent Fliniaux (Infrabass)" time="2023-06-15T01:12:49Z">
+        <changelog><![CDATA[Group offset: add option to ignore suffix numbering and extension in item's name
+A bunch of small fixes]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/5fcb777f85b2e3c838ee078d9d4f3cdde1734a46/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/5fcb777f85b2e3c838ee078d9d4f3cdde1734a46/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
       </version>
     </reapack>
   </category>
