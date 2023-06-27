@@ -39,16 +39,16 @@ end
 
 function StripNumbersAndExtensions(take_name)
 	if not string.match(take_name, "L_%d$") then -- If take name doesn't end with layers suffix at the end (like sfx_blabla_L1)
-		if string.match(take_name, "_%d+$") then
-			take_name = string.gsub(take_name, "_%d+$", "")
-		elseif string.match(take_name, "_%d+%.%a+$") then
-			take_name = string.gsub(take_name, "_%d+%.%a+$", "")                    
+		if string.match(take_name, "_%d+%.%w+$") then
+			take_name = string.gsub(take_name, "_%d+%.%w+$", "")  
+		elseif string.match(take_name, " %d+%.%w+$") then
+			take_name = string.gsub(take_name, " %d+%.%w+$", "")			 	
+		elseif string.match(take_name, "_%d+$") then
+			take_name = string.gsub(take_name, "_%d+$", "")                  
 		elseif string.match(take_name, " %d+$") then
 			take_name = string.gsub(take_name, " %d+$", "")
-		elseif string.match(take_name, " %d+%.%a+$") then
-			take_name = string.gsub(take_name, " %d+%.%a+$", "")
-		elseif string.match(take_name, "%.%a+$") then
-			take_name = string.gsub(take_name, "%.%a+$", "")            
+		elseif string.match(take_name, "%.%w+$") then
+			take_name = string.gsub(take_name, "%.%w+$", "")            
 		end
 	end
 	return take_name
@@ -58,71 +58,39 @@ end
 -- SECONDARY FUNCTIONS
 ------------------------------------------------------------------------------------
 
-function SaveInitialState()
-	FI_detected = false
-	t_initial = {}
-	local sel_item_nb = reaper.CountSelectedMediaItems(0)
-	for i=1, sel_item_nb do
-		t_initial[i] = {}
-        local item = reaper.GetSelectedMediaItem(0, i-1)
-        if item ~= nil then
-        	if FI_IsFolderItem(item) then
-        		FI_detected = true
-        		FI_MarkOrSelectChildrenItems(item, true)
-        	end
-            t_initial[i].item = item
-            t_initial[i].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
-        end
-    end 
-end
-
-function RestoreInitialState()	
-	for i=1, #t_initial do
-        local item = t_initial[i].item
-        if item ~= nil then
-        	local current_pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
-        	t_initial[i].current_pos = current_pos
-        end
-    end
-
-    -- Move items at the end of the project before repositioning them (smart hack from NVK to avoid messing the automation points)
-	for i=1, #t_initial do
-		RepositionItems(t_initial[i].item, t_initial[i].current_pos + 10000000)
-	end
-
-	for i=1, #t_initial do
-		RepositionItems(t_initial[i].item, t_initial[i].pos)
-	end	
-
-	-- Reselect items
-	for i=1, #t_initial_selection do
-		reaper.SetMediaItemSelected(t_initial_selection[i], 1)
-	end	
-    cancel = false
-end
-
-function SaveInitialItemSelection()
-	t_initial_selection = {}
-	local sel_item_nb = reaper.CountSelectedMediaItems(0)
-	for i=1, sel_item_nb do
-        local item = reaper.GetSelectedMediaItem(0, i-1)
-        if item ~= nil then
-            t_initial_selection[i] = item
-        end
-    end
-end
-
-function SaveItemSelection()
+function SaveItemsSelection()
 	local t_selection = {}
+	local counter = 1
 	local sel_item_nb = reaper.CountSelectedMediaItems(0)
 	for i=1, sel_item_nb do
         local item = reaper.GetSelectedMediaItem(0, i-1)
         if item ~= nil then
-            t_selection[i] = item
+            t_selection[counter] = item
+            counter = counter + 1
         end
     end
     return t_selection
 end
+
+function ReselectItems(t)
+	for i=1, #t do
+		local item = t[i]
+		local val = reaper.ValidatePtr2(0, item, "MediaItem*")
+		if val == true then
+			reaper.SetMediaItemSelected(item, 1)
+		end
+	end	
+end
+
+function RemoveSkipMark(t)
+	for i=1, #t do
+		local item = t[i]
+		local val = reaper.ValidatePtr2(0, item, "MediaItem*")
+		if val == true then
+			reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "", 1)
+		end
+	end	
+end	
 
 function Unsel_item()
 	local offset = 0
@@ -266,6 +234,20 @@ function FI_MarkOrSelectChildrenItems(item, select)
     --return ar_child_items
 end
 
+function MarkOrSelectOverlappingItems_Core(item, select, mark)
+	if select == true then
+		reaper.SetMediaItemSelected(item, 1)
+		if FI_IsFolderItem(item) then
+			FI_MarkOrSelectChildrenItems(item, true)
+		end
+	else
+		reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "Skip", 1)						
+		if FI_IsFolderItem(item) then
+			FI_MarkOrSelectChildrenItems(item, false)
+		end
+	end	
+end
+
 function MarkOrSelectOverlappingItems(item, select)
 	--local t_overlap_items = {}
 	local item_start = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
@@ -284,40 +266,15 @@ function MarkOrSelectOverlappingItems(item, select)
 		local item_check_end = item_check_start + reaper.GetMediaItemInfo_Value(item_check, "D_LENGTH")
 		if overlap == true then
 			if (item_check_start >= item_start and item_check_start + 0.00001 < last_end) then
-				--t_overlap_items[counter] = item_check
-				if select == true then
-					reaper.SetMediaItemSelected(item_check, 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, true)
-					end
-				else
-					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, false)
-					end
-				end
+				MarkOrSelectOverlappingItems_Core(item_check, select, item_mark)		
 				extend_len = true
-			else
-				break
 			end
 		end		
 		if adjacent == true then
 			if CheckFloatEquality(item_check_start, last_end) then
 				--t_overlap_items[counter] = item_check			
-				if select == true then
-					reaper.SetMediaItemSelected(item_check, 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, true)
-					end
-				else
-					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, false)
-					end
-				end				
+				MarkOrSelectOverlappingItems_Core(item_check, select, item_mark)					
 				extend_len = true
-			else
-				break
 			end
 		end
 		if extend_len == true then
@@ -368,8 +325,8 @@ function Init()
 	dofile(reaper.GetResourcePath() .. '/Scripts/ReaTeam Extensions/API/imgui.lua')('0.8.6')
 	]]
 
-	SaveInitialState()
-	SaveInitialItemSelection()
+	UpdateFolderItem()
+	t_initial_selection = SaveItemsSelection()
 	t_tracks = SaveSelItemsTracks()
 	previous_interval = nil
 	previous_offset_state = nil
@@ -420,10 +377,11 @@ function Init()
 	if adjacent == "true" then adjacent = true end
 	if adjacent == "false" then adjacent = false end	
 
-	disable_autoxfade = reaper.GetExtState("vf_reposition_items_settings", "disable_autoxfade_noGUI")
-	if disable_autoxfade == "" then disable_autoxfade = nil end
-	if disable_autoxfade == "true" then disable_autoxfade = true end
-	if disable_autoxfade == "false" then disable_autoxfade = false end	
+	autoxfade = reaper.GetExtState("vf_reposition_items", "autoxfade_noGUI")
+	if autoxfade == nil then autoxfade = true end -- To avoid error with old version of script 
+	if autoxfade == "" then autoxfade = nil end
+	if autoxfade == "true" then autoxfade = true end
+	if autoxfade == "false" then autoxfade = false end	
 
 	group_offset_option = reaper.GetExtState("vf_reposition_items_settings", "group_offset_option_noGUI")
 	if group_offset_option == "" then group_offset_option = nil end
@@ -440,15 +398,18 @@ function Init()
 	if not mode_val then mode_val = 0 end
 	if overlap == nil then overlap = false end
 	if adjacent == nil then adjacent = false end
-	if disable_autoxfade == nil then disable_autoxfade = true end
+	if autoxfade == nil then autoxfade = true end
 	if group_offset_option == nil then group_offset_option = true end
 
 	return true
 end
 
 function Post()
+	RemoveSkipMark(t_initial_selection)
 	if autoxfade_option == 1 then
 		Command(41118) -- Options: Enable auto-crossfades
+	else
+		Command(41119) -- Options: Disable auto-crossfades
 	end
 end
 
@@ -459,7 +420,9 @@ function Main()
 
 	reaper.PreventUIRefresh(1)
 
-	if disable_autoxfade == true then
+	if autoxfade == true then
+		Command(41118) -- Options: Enable auto-crossfades
+	else
 		Command(41119) -- Options: Disable auto-crossfades
 	end		
 
@@ -560,20 +523,15 @@ function Main()
 			reaper.SetMediaItemInfo_Value(item, "D_SNAPOFFSET", item_list[j].snapoffset)
 		end	
 
-		-- Restore item selection
-		for j=1, #t_initial_selection do
-			reaper.SetMediaItemSelected(t_initial_selection[j], 1)
-		end						
+		ReselectItems(t_initial_selection)							
 	end	
 
-	-- Remove skip item mark
-	for j=1, #t_initial_selection do
-		reaper.GetSetMediaItemInfo_String(t_initial_selection[j], "P_EXT:vf_reposition_items", "", 1)
-	end		
+	RemoveSkipMark(t_initial_selection)	
 
 	UpdateFolderItem()
 	reaper.SetEditCurPos2(0, initial_cur_pos, 0, 0) -- Restore edit cursor pos
 	apply = false
+	reaper.UpdateArrange()
 	reaper.PreventUIRefresh(-1)
 end
 

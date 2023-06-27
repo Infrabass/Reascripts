@@ -2,10 +2,15 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.3.3
+-- @Version 1.4
 -- @Changelog
---   Group offset: add option to ignore suffix numbering and extension in item's name
---   A bunch of small fixes
+--		Allow negative interval values (useful to consolidate and crossfade edited recordings)
+--		Add auto-crossfade button as this is now a critical parameter
+--		Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
+--		Add a button in settings tab to save current values as default values
+--		Set keyboard focus to the interval parameter when script start		
+--		Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
+--		Fix a few rare issues
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -30,13 +35,21 @@
 
 --[[
 Special thanks to
-- Nvk for the envelope points hack and autorisation to release with Folder Items support
+- Nvk for the envelope points hack and autorisation to release the script with Folder Items support
 - Cfillion for the help with ReaImGui and ReaPack setup (this is my first script released via my repository, woot woot!)
 ]]
 
 
 --[[
 Full Changelog:
+	v1.4
+		+ Allow negative interval values (useful to consolidate and crossfade edited recordings)
+		+ Add auto-crossfade button as this is now a critical parameter
+		+ Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
+		+ Add a button in settings tab to save current values as default values
+		+ Set keyboard focus to the interval parameter when script start		
+		+ Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
+		+ Fix a few rare issues
 	v1.3.3
 		+ Group offset: add option to ignore suffix numbering and extension in item's name
 		+ A bunch of small fixes
@@ -69,6 +82,11 @@ function Print(var) reaper.ShowConsoleMsg(tostring(var) .. "\n") end
 
 function Command(var) reaper.Main_OnCommandEx(tostring(var), 0, 0) end
 
+function toboolean(a)
+	if a > 0 then a = true else a = false end
+	return a
+end
+
 function CheckFloatEquality(a,b)
 	return (math.abs(a-b)<0.00001)
 end
@@ -82,9 +100,15 @@ function sort_func(a,b)
 	end
 end
 
-function CheckTableEquality(t1,t2)
-    for i,v in next, t1 do if t2[i]~=v then return false end end
-    for i,v in next, t2 do if t1[i]~=v then return false end end
+function CheckTableEquality(t1,t2) -- Re-ordering before comparing
+	t1_string = {}
+	t2_string = {}
+	for i,n in ipairs(t1) do t1_string[i] = tostring(n) end
+	for i,n in ipairs(t2) do t2_string[i] = tostring(n) end
+	table.sort(t1_string)
+	table.sort(t2_string)
+    for i,v in next, t1_string do if t2_string[i]~=v then return false end end
+    for i,v in next, t2_string do if t1_string[i]~=v then return false end end
     return true
 end
 
@@ -99,16 +123,16 @@ end
 
 function StripNumbersAndExtensions(take_name)
 	if not string.match(take_name, "L_%d$") then -- If take name doesn't end with layers suffix at the end (like sfx_blabla_L1)
-		if string.match(take_name, "_%d+$") then
-			take_name = string.gsub(take_name, "_%d+$", "")
-		elseif string.match(take_name, "_%d+%.%a+$") then
-			take_name = string.gsub(take_name, "_%d+%.%a+$", "")                    
+		if string.match(take_name, "_%d+%.%w+$") then
+			take_name = string.gsub(take_name, "_%d+%.%w+$", "")  
+		elseif string.match(take_name, " %d+%.%w+$") then
+			take_name = string.gsub(take_name, " %d+%.%w+$", "")			 	
+		elseif string.match(take_name, "_%d+$") then
+			take_name = string.gsub(take_name, "_%d+$", "")                  
 		elseif string.match(take_name, " %d+$") then
 			take_name = string.gsub(take_name, " %d+$", "")
-		elseif string.match(take_name, " %d+%.%a+$") then
-			take_name = string.gsub(take_name, " %d+%.%a+$", "")
-		elseif string.match(take_name, "%.%a+$") then
-			take_name = string.gsub(take_name, "%.%a+$", "")            
+		elseif string.match(take_name, "%.%w+$") then
+			take_name = string.gsub(take_name, "%.%w+$", "")            
 		end
 	end
 	return take_name
@@ -129,69 +153,82 @@ function ResetSavedParameters()
 	reaper.SetExtState("vf_reposition_items", "mode_val", "", true)
 	reaper.SetExtState("vf_reposition_items", "overlap", "", true)
 	reaper.SetExtState("vf_reposition_items", "adjacent", "", true)
+	reaper.SetExtState("vf_reposition_items", "autoxfade", "", true)
 end	
 
-function SaveInitialState()
+function ReselectItems(t)
+	for i=1, #t do
+		local item = t[i]
+		local val = reaper.ValidatePtr2(0, item, "MediaItem*")
+		if val == true then
+			reaper.SetMediaItemSelected(item, 1)
+		end
+	end	
+end
+
+function SaveItemsState()
+	UpdateFolderItem()
 	FI_detected = false
-	t_initial = {}
+	local t_initial = {}
+	local counter = 1
 	local sel_item_nb = reaper.CountSelectedMediaItems(0)
 	for i=1, sel_item_nb do
-		t_initial[i] = {}
         local item = reaper.GetSelectedMediaItem(0, i-1)
         if item ~= nil then
         	if FI_IsFolderItem(item) then
         		FI_detected = true
-        		FI_MarkOrSelectChildrenItems(item, true)
         	end
-            t_initial[i].item = item
-            t_initial[i].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+    		t_initial[counter] = {}
+        	t_initial[counter].item = item
+        	t_initial[counter].pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+        	t_initial[counter].snapoffset = reaper.GetMediaItemInfo_Value(item, "D_SNAPOFFSET")
+        	t_initial[counter].autofadein = reaper.GetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO")
+        	t_initial[counter].autofadeout = reaper.GetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO")        	
+        	counter = counter + 1
         end
     end 
+    return t_initial
 end
 
-function RestoreInitialState()	
-	for i=1, #t_initial do
-        local item = t_initial[i].item
-        if item ~= nil then
-        	local current_pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
-        	t_initial[i].current_pos = current_pos
-        end
+function RestoreItemsState(t)	
+	local initial_cur_pos = reaper.GetCursorPositionEx(0)	
+
+	for i=1, #t do -- Reset snapoffset because native action use this instead of start position
+		reaper.SetMediaItemInfo_Value(t[i].item, "D_SNAPOFFSET", 0)
+	end	
+
+	for i=1, #t do
+    	local current_pos = reaper.GetMediaItemInfo_Value(t[i].item, "D_POSITION")
+    	t[i].current_pos = current_pos
     end
 
     -- Move items at the end of the project before repositioning them (smart hack from NVK to avoid messing the automation points)
-	for i=1, #t_initial do
-		RepositionItems(t_initial[i].item, t_initial[i].current_pos + 10000000)
+	for i=1, #t do
+		RepositionItems(t[i].item, t[i].current_pos + 10000000)
 	end
 
-	for i=1, #t_initial do
-		RepositionItems(t_initial[i].item, t_initial[i].pos)
+	for i=1, #t do
+		local item = t[i].item
+		RepositionItems(item, t[i].pos)
+		reaper.SetMediaItemInfo_Value(item, "D_SNAPOFFSET", t[i].snapoffset)
+		reaper.SetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO", t[i].autofadein)
+		reaper.SetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO", t[i].autofadeout)		
 	end	
 
-	-- Reselect items
-	for i=1, #t_initial_selection do
-		reaper.SetMediaItemSelected(t_initial_selection[i], 1)
-	end	
-    cancel = false
+	ReselectItems(t_initial_selection)
+
+	reaper.SetEditCurPos2(0, initial_cur_pos, 0, 0) -- Restore edit cursor pos
 end
 
-function SaveInitialItemSelection()
-	t_initial_selection = {}
-	local sel_item_nb = reaper.CountSelectedMediaItems(0)
-	for i=1, sel_item_nb do
-        local item = reaper.GetSelectedMediaItem(0, i-1)
-        if item ~= nil then
-            t_initial_selection[i] = item
-        end
-    end
-end
-
-function SaveItemSelection()
+function SaveItemsSelection()
 	local t_selection = {}
+	local counter = 1
 	local sel_item_nb = reaper.CountSelectedMediaItems(0)
 	for i=1, sel_item_nb do
         local item = reaper.GetSelectedMediaItem(0, i-1)
         if item ~= nil then
-            t_selection[i] = item
+            t_selection[counter] = item
+            counter = counter + 1
         end
     end
     return t_selection
@@ -206,14 +243,25 @@ function Unsel_item()
 	end
 end
 
-function ForceSelectItems()
+function ForceSelectItems(t)
 	Unsel_item()
-	for i=1, #t_initial do
-        local item = t_initial[i].item
-        if item ~= nil then
+	for i=1, #t do
+        local item = t[i]
+		local val = reaper.ValidatePtr2(0, item, "MediaItem*")
+		if val == true then
             reaper.SetMediaItemSelected(item, 1)
         end
     end
+end	
+
+function RemoveSkipMark(t)
+	for i=1, #t do
+		local item = t[i]
+		local val = reaper.ValidatePtr2(0, item, "MediaItem*")
+		if val == true then
+			reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "", 1)
+		end
+	end	
 end	
 
 function RepositionItems(item, pos)
@@ -221,7 +269,7 @@ function RepositionItems(item, pos)
 	reaper.SetMediaItemSelected(item, 1)
 	if FI_IsFolderItem(item) then
 		FI_MarkOrSelectChildrenItems(item, true)
-	end	
+	end
 	MarkOrSelectOverlappingItems(item, true)
 	reaper.SetEditCurPos(pos, 0, 0)
 	Command(41205) -- Item edit: Move position of item to edit cursor
@@ -313,7 +361,6 @@ end
 
 function FI_MarkOrSelectChildrenItems(item, select)
     --local ar_child_items = {}
-    
     local parentTrack = reaper.GetMediaItem_Track(item)
     local columnStart = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
     local columnEnd = columnStart + reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
@@ -349,6 +396,20 @@ function FI_MarkOrSelectChildrenItems(item, select)
     --return ar_child_items
 end
 
+function MarkOrSelectOverlappingItems_Core(item, select, mark)
+	if select == true then
+		reaper.SetMediaItemSelected(item, 1)
+		if FI_IsFolderItem(item) then
+			FI_MarkOrSelectChildrenItems(item, true)
+		end
+	else
+		reaper.GetSetMediaItemInfo_String(item, "P_EXT:vf_reposition_items", "Skip", 1)						
+		if FI_IsFolderItem(item) then
+			FI_MarkOrSelectChildrenItems(item, false)
+		end
+	end	
+end
+
 function MarkOrSelectOverlappingItems(item, select)
 	--local t_overlap_items = {}
 	local item_start = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
@@ -363,55 +424,34 @@ function MarkOrSelectOverlappingItems(item, select)
 	for i=0, reaper.CountTrackMediaItems(item_track)-1-item_id-counter do
 		local extend_len
 		local item_check = reaper.GetTrackMediaItem(item_track, i+item_id+1)
+		-- TODO: check if item_check is part of the initial item selection
 		local item_check_start = reaper.GetMediaItemInfo_Value(item_check, "D_POSITION")
 		local item_check_end = item_check_start + reaper.GetMediaItemInfo_Value(item_check, "D_LENGTH")
+		local _, item_mark = reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "", 0)						
+
 		if overlap == true then
-			if (item_check_start >= item_start and item_check_start + 0.00001 < last_end) then
+			if (item_check_start >= item_start and item_check_start + 0.00001 < last_end) then				
 				--t_overlap_items[counter] = item_check
-				if select == true then
-					reaper.SetMediaItemSelected(item_check, 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, true)
-					end
-				else
-					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, false)
-					end
-				end
+				MarkOrSelectOverlappingItems_Core(item_check, select, item_mark)		
 				extend_len = true
-			else
-				break
 			end
 		end		
 		if adjacent == true then
 			if CheckFloatEquality(item_check_start, last_end) then
 				--t_overlap_items[counter] = item_check			
-				if select == true then
-					reaper.SetMediaItemSelected(item_check, 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, true)
-					end
-				else
-					reaper.GetSetMediaItemInfo_String(item_check, "P_EXT:vf_reposition_items", "Skip", 1)
-					if FI_IsFolderItem(item_check) then
-						FI_MarkOrSelectChildrenItems(item_check, false)
-					end
-				end				
+				MarkOrSelectOverlappingItems_Core(item_check, select, item_mark)	
 				extend_len = true
-			else
-				break
 			end
 		end
 		if extend_len == true then
 			last_end = item_check_end
 		else
-			break
+			break -- TODO: adjust this break, to support multiple overlapping items or item lane?
 		end
 		total_len = last_end - item_start
 		counter = counter + 1
 	end
-	--return t_overlap_items, total_len	
+	--return t_overlap_items, total_len		
 	return total_len
 end
 
@@ -454,8 +494,10 @@ function Init()
 	local info = debug.getinfo(1,'S')
 	script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
 
-	SaveInitialState()
-	SaveInitialItemSelection()
+	first_run = true
+
+	t_initial = SaveItemsState()
+	t_initial_selection = SaveItemsSelection()
 	t_tracks = SaveSelItemsTracks()
 	previous_interval = nil
 	previous_offset_state = nil
@@ -469,33 +511,37 @@ function Init()
 	font = reaper.ImGui_CreateFont('sans-serif', 13)
 	reaper.ImGui_Attach(ctx, font)
 
-	-- Restore saved parameters & settings
-	interval_sec = reaper.GetExtState("vf_reposition_items", "interval_sec")
+	-- Restore default or saved parameters & settings
+	if save_settings == true then interval_sec = reaper.GetExtState("vf_reposition_items", "interval_sec") else interval_sec = reaper.GetExtState("vf_reposition_items_default", "interval_sec") end
 	if interval_sec == "" then interval_sec = nil end
-	interval_frame = reaper.GetExtState("vf_reposition_items", "interval_frame")
+	if save_settings == true then interval_frame = reaper.GetExtState("vf_reposition_items", "interval_frame") else interval_frame = reaper.GetExtState("vf_reposition_items_default", "interval_frame") end
 	if interval_frame == "" then interval_frame = nil end
-	interval_beats = reaper.GetExtState("vf_reposition_items", "interval_beats")
+	if save_settings == true then interval_beats = reaper.GetExtState("vf_reposition_items", "interval_beats") else interval_beats = reaper.GetExtState("vf_reposition_items_default", "interval_beats") end
 	if interval_beats == "" then interval_beats = nil end
-	interval_mode = reaper.GetExtState("vf_reposition_items", "interval_mode")
+	if save_settings == true then interval_mode = reaper.GetExtState("vf_reposition_items", "interval_mode") else interval_mode = reaper.GetExtState("vf_reposition_items_default", "interval_mode") end
 	if interval_mode == "" then interval_mode = nil end			
-	offset_val = reaper.GetExtState("vf_reposition_items", "offset_val")
+	if save_settings == true then offset_val = reaper.GetExtState("vf_reposition_items", "offset_val") else offset_val = reaper.GetExtState("vf_reposition_items_default", "offset_val") end
 	if offset_val == "" then offset_val = nil end
-	offset_state = reaper.GetExtState("vf_reposition_items", "offset_state")
+	if save_settings == true then offset_state = reaper.GetExtState("vf_reposition_items", "offset_state") else offset_state = reaper.GetExtState("vf_reposition_items_default", "offset_state") end
 	if offset_state == "" then offset_state = nil end
 	if offset_state == "true" then offset_state = true end
 	if offset_state == "false" then offset_state = false end	
-	toggle_val = reaper.GetExtState("vf_reposition_items", "toggle_val")
+	if save_settings == true then toggle_val = reaper.GetExtState("vf_reposition_items", "toggle_val") else toggle_val = reaper.GetExtState("vf_reposition_items_default", "toggle_val") end
 	if toggle_val == "" then toggle_val = nil end
-	mode_val = reaper.GetExtState("vf_reposition_items", "mode_val")
+	if save_settings == true then mode_val = reaper.GetExtState("vf_reposition_items", "mode_val") else mode_val = reaper.GetExtState("vf_reposition_items_default", "mode_val") end
 	if mode_val == "" then mode_val = nil end
-	overlap = reaper.GetExtState("vf_reposition_items", "overlap")
+	if save_settings == true then overlap = reaper.GetExtState("vf_reposition_items", "overlap") else overlap = reaper.GetExtState("vf_reposition_items_default", "overlap") end
 	if overlap == "" then overlap = nil end
 	if overlap == "true" then overlap = true end
 	if overlap == "false" then overlap = false end	
-	adjacent = reaper.GetExtState("vf_reposition_items", "adjacent")
+	if save_settings == true then adjacent = reaper.GetExtState("vf_reposition_items", "adjacent") else adjacent = reaper.GetExtState("vf_reposition_items_default", "adjacent") end
 	if adjacent == "" then adjacent = nil end		
 	if adjacent == "true" then adjacent = true end
 	if adjacent == "false" then adjacent = false end	
+	if save_settings == true then autoxfade = reaper.GetExtState("vf_reposition_items", "autoxfade") else autoxfade = reaper.GetExtState("vf_reposition_items_default", "autoxfade") end
+	if autoxfade == "" then autoxfade = nil end		
+	if autoxfade == "true" then autoxfade = true end
+	if autoxfade == "false" then autoxfade = false end		
 
 	save_settings = reaper.GetExtState("vf_reposition_items_settings", "save_settings")
 	if save_settings == "" then save_settings = nil end		
@@ -522,13 +568,15 @@ function Init()
 end
 
 function Post()
+	RemoveSkipMark(t_initial_selection)
 	if autoxfade_option == 1 then
 		Command(41118) -- Options: Enable auto-crossfades
+	else
+		Command(41119) -- Options: Disable auto-crossfades
 	end
 end
 
 function Main(interval, offset, non_linear)
-
 	count_sel_items = reaper.CountSelectedMediaItems(0)
 	if count_sel_items < 0 then return end
 
@@ -536,6 +584,8 @@ function Main(interval, offset, non_linear)
 
 	local initial_cur_pos = reaper.GetCursorPositionEx(0)
 	init_interval = interval
+
+	RestoreItemsState(t_initial) -- Reset initial selection position
 
 	local loop_nb = 1
 	if mode == "track" then
@@ -600,7 +650,7 @@ function Main(interval, offset, non_linear)
 		for j=2, #item_list do
 			local item = item_list[j].item
 			RepositionItems(item_list[j].item, item_list[j].pos + 10000000)
-		end						
+		end		
 
 		-- Reposition item & restore snapoffset
 		for j=1, #item_list do
@@ -611,20 +661,15 @@ function Main(interval, offset, non_linear)
 			reaper.SetMediaItemInfo_Value(item, "D_SNAPOFFSET", item_list[j].snapoffset)
 		end	
 
-		-- Restore item selection
-		for j=1, #t_initial_selection do
-			reaper.SetMediaItemSelected(t_initial_selection[j], 1)
-		end						
+		ReselectItems(t_initial_selection)
 	end	
 
-	-- Remove skip item mark
-	for j=1, #t_initial_selection do
-		reaper.GetSetMediaItemInfo_String(t_initial_selection[j], "P_EXT:vf_reposition_items", "", 1)
-	end		
+	RemoveSkipMark(t_initial_selection)
 
 	UpdateFolderItem()
 	reaper.SetEditCurPos2(0, initial_cur_pos, 0, 0) -- Restore edit cursor pos
 	apply = false
+	reaper.UpdateArrange()
 	reaper.PreventUIRefresh(-1)
 end
 
@@ -633,7 +678,7 @@ end
 ------------------------------------------------------------------------------------
 
 function ToolTip(text)
-	if reaper.ImGui_IsItemHovered(ctx, reaper.ImGui_HoveredFlags_DelayNormal()) then
+	if reaper.ImGui_IsItemHovered(ctx, reaper.ImGui_HoveredFlags_DelayNormal() | reaper.ImGui_HoveredFlags_AllowWhenDisabled()) then
 		reaper.ImGui_BeginTooltip(ctx)
 		reaper.ImGui_PushTextWrapPos(ctx, reaper.ImGui_GetFontSize(ctx) * 35.0)
 		reaper.ImGui_Text(ctx, text)
@@ -766,9 +811,13 @@ function GenerateScript(interval_sec, interval_frame, interval_beats, interval_m
 	local string_adjacent = ""
 	if adjacent == true then string_adjacent = "_adjacent" end
 
+	-- Auto-crossfade string
+	local string_xfade = ""
+	if autoxfade == true then string_xfade = "_xfade" end	
+
 	local script_name = script_path
-		..  "VF - ITEM - Advanced items repositioning - no GUI - "
-		..  string_interval .. string_offset .. string_toggle .. string_mode .. string_overlap .. string_adjacent 
+		..  "VF - ITEM - Advanced items repositioning - no GUI "
+		..  string_interval .. string_offset .. string_toggle .. string_mode .. string_overlap .. string_adjacent .. string_xfade
 		..  ".lua"	
 
 	local string_info = "-- This script was generated by Script: VF - ITEM - Advanced items repositioning.lua\n"
@@ -782,7 +831,7 @@ function GenerateScript(interval_sec, interval_frame, interval_beats, interval_m
 	local str8 = 'reaper.SetExtState("vf_reposition_items", "mode_val_noGUI", '.. tostring(mode_val) ..', true)\n'
 	local str9 = 'reaper.SetExtState("vf_reposition_items", "overlap_noGUI", tostring('.. tostring(overlap) ..'), true)\n'
 	local str10 = 'reaper.SetExtState("vf_reposition_items", "adjacent_noGUI", tostring('.. tostring(adjacent) ..'), true)\n'
-	local str11 = 'reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade_noGUI", tostring('.. tostring(disable_autoxfade) ..'), true)\n'
+	local str11 = 'reaper.SetExtState("vf_reposition_items", "autoxfade_noGUI", tostring('.. tostring(autoxfade) ..'), true)\n'
 	local str12 = 'reaper.SetExtState("vf_reposition_items_settings", "group_offset_option_noGUI", tostring('.. tostring(group_offset_option) ..'), true)\n'
 	local string_final = [=[local script_path = debug.getinfo(1,'S').source:match[[^@?(.*[\/])[^\/]-$]]
 local path = script_path .. "VF - ITEM - Advanced items repositioning - last values without GUI.lua"
@@ -823,6 +872,8 @@ function Frame()
 	if not mode_val then mode_val = 0 end
 	if overlap == nil then overlap = false end
 	if adjacent == nil then adjacent = false end
+	if autoxfade == nil then autoxfade = toboolean(autoxfade_option) end
+	if autoxfade_before_force_disable == nil then autoxfade_before_force_disable = autoxfade end
 	if apply == nil then apply = false end
 	if realtime == nil then realtime = false end
 	if save_settings == nil then save_settings = false end	
@@ -831,20 +882,19 @@ function Frame()
 	if group_offset_option == nil then group_offset_option = true end
 	if hide_tooltip == nil then hide_tooltip = false end	
 
-	-- Check if item selection have changed, if yes save new initial state to restore if cancel button is clicked
-	local t_current_selection = SaveItemSelection()
-	local same_item_selection = CheckTableEquality(t_current_selection, t_initial_selection)
-	if same_item_selection == false then
-		SaveInitialState()
-		SaveInitialItemSelection()
-		if mode == "track" then
-			t_tracks = SaveSelItemsTracks()
+	-- Check if item selection have changed, if yes save new initial state to restore if cancel button is clicked, store overlapping items
+	if reaper.GetProjectStateChangeCount(0) ~= previous_proj_state and realtime == false then
+		local t_current_selection = SaveItemsSelection()
+		local same_item_selection = CheckTableEquality(t_current_selection, t_initial_selection)
+		if same_item_selection == false then	
+			t_initial = SaveItemsState()
+			t_initial_selection = SaveItemsSelection()
+			if mode == "track" then
+				t_tracks = SaveSelItemsTracks()
+			end
 		end
 	end
-
-	if disable_autoxfade == true then
-		Command(41119) -- Options: Disable auto-crossfades
-	end	
+	previous_proj_state = reaper.GetProjectStateChangeCount(0)
 
 	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FrameRounding(), 10, val2In)
 	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_GrabRounding(), 10, val2In)
@@ -867,24 +917,32 @@ function Frame()
 			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
 			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)			
 			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBg(), bg_new_color)
-		end
+		end	
 
-		if interval_mode == 0 then
+		if interval_mode == 0 then	
+			if first_run then
+				reaper.ImGui_SetKeyboardFocusHere(ctx)
+				first_run = nil
+			end		
 			rv_interval_sec, interval_sec = reaper.ImGui_InputDouble(ctx, '##Interval', interval_sec, 0.5, 0.1, '%.1f')
-			if interval_sec < 0 then interval_sec = 0 end
+			if toggle == "start" and interval_sec < 0 then interval_sec = 0 end
 			if save_settings == true then
 				reaper.SetExtState("vf_reposition_items", "interval_sec", tostring(interval_sec), true)
 			end
 			interval = interval_sec
 		elseif interval_mode == 1 then
+			if first_run then
+				reaper.ImGui_SetKeyboardFocusHere(ctx)
+				first_run = nil
+			end	
 			rv_interval_frame, interval_frame = reaper.ImGui_InputInt(ctx, '##Interval', interval_frame, 1, 1)
-			if interval_frame < 0 then interval_frame = 0 end
+			if toggle == "start" and interval_frame < 0 then interval_frame = 0 end			
 			if save_settings == true then
 				reaper.SetExtState("vf_reposition_items", "interval_frame", tostring(interval_frame), true)
 			end		
 			local framerate, dropFrameOut = reaper.TimeMap_curFrameRate(0)	
 			interval = interval_frame * (1/framerate)
-		elseif interval_mode == 2 then
+		elseif interval_mode == 2 then		
 			local beats = "8/1\0".."4/1\0".."2/1\0".."1/1\0".."1/2\0".."1/4\0".."1/8\0".."1/16\0".."1/32\0"
 			rv_interval_beats, interval_beats = reaper.ImGui_Combo(ctx, "##Interval", interval_beats, beats, 9)
 			if save_settings == true then
@@ -951,6 +1009,15 @@ function Frame()
 		end
 		if toggle_val == 0 then toggle = "start"
 		elseif toggle_val == 1 then toggle = "end" end
+		if disable_autoxfade == true then
+			if toggle == "start" then
+				autoxfade = false
+				force_autoxfade = true
+			elseif toggle == "end" and force_autoxfade == true then
+				autoxfade = autoxfade_before_force_disable
+				force_autoxfade = false
+			end
+		end				
 		reaper.ImGui_Dummy(ctx, 0, 0)
 
 		-- Mode radio
@@ -967,26 +1034,9 @@ function Frame()
 			ToolTip("Track mode = for each track, start at first item's position\nQueue mode = for each track, start at last repositioned item position in previous track\nTimeline mode = Reposition accross tracks")
 		end
 		reaper.ImGui_Dummy(ctx, 0, 0)
-
-		-- Realtime Button
-		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.5)
-		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
-		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)					
-		rv_realtime, realtime = ToggleButton(ctx, 'Realtime mode', realtime, 100, 20)
-		if hide_tooltip == false then
-			ToolTip("Reposition selected items in realtime\nItem selection can't be changed while this mode is active\nStart button is disabled if at least one nvk folder items is selected")
-		end	
-		reaper.ImGui_PopStyleColor(ctx, 3)
-		if realtime == true then
-			ForceSelectItems()
-		end
-		reaper.ImGui_SameLine(ctx)
-
-		-- Overlap & Adjacent Buttons
-		rv_overlap, overlap = ToggleButton(ctx, 'Overlap', overlap, 80, 20)
+			
+		-- Overlap, Adjacent & Auto-crossfade Buttons
+		rv_overlap, overlap = ToggleButton(ctx, 'Overlap', overlap, 75, 20)
 		if save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "overlap", tostring(overlap), true)
 		end		
@@ -994,20 +1044,43 @@ function Frame()
 			ToolTip("Preserve overlapping items")
 		end	
 		reaper.ImGui_SameLine(ctx)
-		rv_adjacent, adjacent = ToggleButton(ctx, 'Adjacent', adjacent, 80, 20)
+		rv_adjacent, adjacent = ToggleButton(ctx, 'Adjacent', adjacent, 75, 20)
 		if save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "adjacent", tostring(adjacent), true)
 		end				
 		if hide_tooltip == false then
 			ToolTip("Preserve adjacent items")
-		end						
+		end	
+		reaper.ImGui_SameLine(ctx)
+		if force_autoxfade == true then
+			reaper.ImGui_BeginDisabled(ctx, 1)
+		end
+		rv_autoxfade, autoxfade = ToggleButton(ctx, 'Auto-crossfade', autoxfade, 110, 20)
+		if save_settings == true then
+			reaper.SetExtState("vf_reposition_items", "autoxfade", tostring(autoxfade), true)
+		end		
+		if reaper.ImGui_IsItemHovered(ctx) and reaper.ImGui_IsMouseReleased(ctx, reaper.ImGui_MouseButton_Left()) then		
+			autoxfade_before_force_disable = autoxfade
+		end		
+
+		if hide_tooltip == false then
+			ToolTip("Temporary toggle native auto-crossfade option")
+		end
+		if force_autoxfade == true then
+			reaper.ImGui_EndDisabled(ctx)
+		end		
+		if autoxfade == true then
+			Command(41118) -- Options: Enable auto-crossfades
+		else
+			Command(41119) -- Options: Disable auto-crossfades
+		end
 		reaper.ImGui_Dummy(ctx, 0, 4)
 
 		local sel_item_nb = tostring(reaper.CountSelectedMediaItems(0))
 		reaper.ImGui_SeparatorText(ctx, tostring(sel_item_nb).." selected item(s)")
 		reaper.ImGui_Dummy(ctx, 0, 4)
 
-		-- Apply/Cancel Buttons
+		-- Apply/Cancel & Realtime Buttons
 		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.3, 0.3, 0.3, 1.0)
 		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.4, 0.4, 0.4, 1.0)
 		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 0.5, 1.0)
@@ -1032,9 +1105,34 @@ function Frame()
 			if realtime == true then realtime = false end
 		end
 		if hide_tooltip == false then
-			ToolTip("Cancel repositioning since last item selection change")
+			ToolTip("Cancel repositioning since last item selection change\n(Can't cancel if nvk folder items have been merged)")
 		end				
 		reaper.ImGui_PopStyleColor(ctx, 3)
+		reaper.ImGui_SameLine(ctx)	
+		if FI_detected == true and realtime == true and interval and interval < 0 then
+			reaper.ShowMessageBox("Realtime mode is not compatible with negative interval value when at least one nvk folder item is selected", "REALTIME MODE\nhave been deactivated", 0)
+		end		
+		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.5)
+		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
+		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
+		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
+		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
+		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)					
+		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
+			realtime = false			
+			reaper.ImGui_BeginDisabled(ctx, 1)
+		end			
+		rv_realtime, realtime = ToggleButton(ctx, 'Realtime mode', realtime, 110, 20)
+		if hide_tooltip == false then
+			ToolTip("Reposition selected items in realtime\nItem selection can't be changed while this mode is active\nNot compatible with start mode if at least one nvk folder items is selected")
+		end			
+		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
+			reaper.ImGui_EndDisabled(ctx)
+		end	
+		reaper.ImGui_PopStyleColor(ctx, 3)
+		if realtime == true then
+			ForceSelectItems(t_initial_selection)
+		end
 
 		if reaper.ImGui_IsKeyPressed(ctx, reaper.ImGui_Key_Enter()) then
 			apply = true
@@ -1044,7 +1142,7 @@ function Frame()
 		end
 		reaper.ImGui_EndTabItem(ctx)
 
-		if rv_cancel or rv_apply or rv_adjacent or rv_overlap or rv_realtime or (previous_mode_val ~= mode_val) or (previous_toggle_val ~= toggle_val) or rv_offset_val or (previous_offset_state ~= offset_state) or (previous_interval ~= interval) then
+		if rv_cancel or rv_apply or rv_adjacent or rv_overlap or rv_autoxfade or rv_realtime or (previous_mode_val ~= mode_val) or (previous_toggle_val ~= toggle_val) or rv_offset_val or (previous_offset_state ~= offset_state) or (previous_interval ~= interval) then
 			update_items = true
 		end
 
@@ -1064,17 +1162,25 @@ function Frame()
 	-- Settings Tab
 	if reaper.ImGui_BeginTabItem(ctx, "Settings", false) then
 		save_settings_toggled, save_settings = reaper.ImGui_Checkbox(ctx, "Save last settings", save_settings)
+		if hide_tooltip == false then
+			ToolTip("If actived, overwrite the saved default values")
+		end			
 		if save_settings_toggled == true and save_settings == false then
 			ResetSavedParameters()
 		end
 		reaper.SetExtState("vf_reposition_items_settings", "save_settings", tostring(save_settings), true)
 		rv, close_window = reaper.ImGui_Checkbox(ctx, "Close window after applying or cancelling", close_window)
 		reaper.SetExtState("vf_reposition_items_settings", "close_window", tostring(close_window), true)
-		rv, disable_autoxfade = reaper.ImGui_Checkbox(ctx, "Disable auto-crossfade", disable_autoxfade)
-		reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true)	
-		rv, group_offset_option = reaper.ImGui_Checkbox(ctx, "Group offset mode", group_offset_option)
+		rv_disable_autoxfade, disable_autoxfade = reaper.ImGui_Checkbox(ctx, "Disable auto-crossfade when using start mode", disable_autoxfade)
+		reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true)		
+		if rv_disable_autoxfade and disable_autoxfade == true then autoxfade_before_force_disable = autoxfade end
+		if disable_autoxfade == false then
+			force_autoxfade = false
+			autoxfade = autoxfade_before_force_disable
+		end
+		rv, group_offset_option = reaper.ImGui_Checkbox(ctx, "Group offset ignores numbering & extension", group_offset_option)
 		if hide_tooltip == false then
-			ToolTip("If active, group offset detection will ignore suffix numbering and extension in item's name")
+			ToolTip("If actived, group offset detection will ignore suffix numbering and extension in item's name")
 		end
 		reaper.SetExtState("vf_reposition_items_settings", "group_offset_option", tostring(group_offset_option), true)				
 		rv, hide_tooltip = reaper.ImGui_Checkbox(ctx, "Hide help tooltip", hide_tooltip)
@@ -1084,11 +1190,28 @@ function Frame()
 		reaper.ImGui_Separator(ctx)
 		reaper.ImGui_Dummy(ctx, 0, 4)
 
-		local rv_gen_script = reaper.ImGui_Button(ctx, "Generate no GUI script with current values", size_wIn, size_hIn)
+		local rv_save_default = reaper.ImGui_Button(ctx, "Save current values as default", 290, 20)
+		if rv_save_default then 
+			reaper.SetExtState("vf_reposition_items_default", "interval_sec", tostring(interval_sec), true)
+			reaper.SetExtState("vf_reposition_items_default", "interval_frame", tostring(interval_frame), true)
+			reaper.SetExtState("vf_reposition_items_default", "interval_beats", tostring(interval_beats), true)
+			reaper.SetExtState("vf_reposition_items_default", "interval_mode", tostring(interval_mode), true)
+			reaper.SetExtState("vf_reposition_items_default", "offset_val", tostring(offset_val), true)
+			reaper.SetExtState("vf_reposition_items_default", "offset_state", tostring(offset_state), true)			
+			reaper.SetExtState("vf_reposition_items_default", "toggle_val", tostring(toggle_val), true)
+			reaper.SetExtState("vf_reposition_items_default", "mode_val", tostring(mode_val), true)
+			reaper.SetExtState("vf_reposition_items_default", "overlap", tostring(overlap), true)
+			reaper.SetExtState("vf_reposition_items_default", "adjacent", tostring(adjacent), true)
+			reaper.SetExtState("vf_reposition_items_default", "autoxfade", tostring(autoxfade), true)
+			reaper.ShowMessageBox("The default values have been saved", "Advanced items repositioning", 0)			
+		end	
+		reaper.ImGui_Dummy(ctx, 0, 4)		
+
+		local rv_gen_script = reaper.ImGui_Button(ctx, "Generate no GUI script with current values", 290, 20)
 		if rv_gen_script then GenerateScript(interval_sec, interval_frame, interval_beats, interval_mode, offset_state, offset_val, toggle_val, mode_val, overlap, adjacent, disable_autoxfade) end
 		if hide_tooltip == false then
 			ToolTip("Useful to save presets or use in custom actions")
-		end			
+		end		
 
 		reaper.ImGui_EndTabItem(ctx)	
 	end
@@ -1107,8 +1230,19 @@ function Loop()
 	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize() | reaper.ImGui_WindowFlags_NoDocking())	
 	if visible then
 		Frame()
+		if apply == true then
+			first_run = true			
+		end		
 		if apply == true or (realtime == true and update_items == true) then	
+
+			if realtime == false then
+				reaper.Undo_BeginBlock2(0)
+			end
 			Main(interval, offset, non_linear)
+			if realtime == false then
+				scrName = ({reaper.get_action_context()})[2]:match(".+[/\\](.+)")
+				reaper.Undo_EndBlock2(0, scrName, -1)			
+			end
 		end
 		reaper.ImGui_End(ctx)
 	end
@@ -1116,16 +1250,16 @@ function Loop()
 	reaper.ImGui_PopStyleVar(ctx, 1)
 
 	if cancel then
-		RestoreInitialState()		
+		RestoreItemsState(t_initial)
+		first_run = true	
+		UpdateFolderItem()	
+		cancel = false
 	end
 
 	if open then
 		reaper.defer(Loop)
 	end
 end
-
-
-reaper.Undo_BeginBlock2(0)
 
 --local start = reaper.time_precise()
 
@@ -1142,7 +1276,4 @@ reaper.atexit(Post)
 
 -- local elapsed = reaper.time_precise() - start
 -- Print("Script executed in ".. elapsed .." seconds")
-
-scrName = ({reaper.get_action_context()})[2]:match(".+[/\\](.+)")
-reaper.Undo_EndBlock2(0, scrName, -1)
 
