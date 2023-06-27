@@ -2,15 +2,15 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.4
+-- @Version 1.4.1
 -- @Changelog
---		Allow negative interval values (useful to consolidate and crossfade edited recordings)
---		Add auto-crossfade button as this is now a critical parameter
---		Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
---		Add a button in settings tab to save current values as default values
---		Set keyboard focus to the interval parameter when script start		
---		Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
---		Fix a few rare issues
+--   Allow negative interval values (useful to consolidate and crossfade edited recordings)
+--   Add auto-crossfade button as this is now a critical parameter
+--   Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
+--   Add a button in settings tab to save current values as default values
+--   Set keyboard focus to the interval parameter when script start		
+--   Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
+--   Fix a few rare issues
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -18,15 +18,17 @@
 --   # Advanced items repositioning
 --   - Use start or end of items to reposition
 --   - 3 modes: TRACK, QUEUE & TIMELINE
---   - Set interval between items in seconds, frames or beats
+--   - Set interval between items in seconds, frames or beats (can be negative values)
 --   - Optionally add time offset between groups of items with the same name
 --   - Non-linear factor to create rallentando & accelerando
 --   - Toggle to preserve overlapping items
 --   - Toggle to preserve adjacent items
+--   - Toggle to auto-crossfade items
 --   - Realtime mode
 --   - Support moving envelope points with items
 --   - Support NVK folder items
 --   - Support ripple edit
+--   - Option to save default values
 --   - Can generate no GUI scripts using current values (useful to save presets or use in custom actions)
 --   
 --   ## Dependencies
