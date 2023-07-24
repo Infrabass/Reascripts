@@ -2,15 +2,9 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.4.1
+-- @Version 1.4.3
 -- @Changelog
---   Allow negative interval values (useful to consolidate and crossfade edited recordings)
---   Add auto-crossfade button as this is now a critical parameter
---   Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
---   Add a button in settings tab to save current values as default values
---   Set keyboard focus to the interval parameter when script start		
---   Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
---   Fix a few rare issues
+--   Fix saved settings not loaded correctly at startup
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -44,6 +38,11 @@ Special thanks to
 
 --[[
 Full Changelog:
+	v1.4.3
+		+ Fix saved settings not loaded correctly at startup
+	v1.4.1
+		+ Re-enable dock but this time the window dimension is reset when window is undocked
+		+ Fix wrong window label if window is docked
 	v1.4
 		+ Allow negative interval values (useful to consolidate and crossfade edited recordings)
 		+ Add auto-crossfade button as this is now a critical parameter
@@ -509,11 +508,34 @@ function Init()
 	
 	autoxfade_option = reaper.GetToggleCommandState(40041) -- Options: Auto-crossfade media items when editing		
 
-	ctx = reaper.ImGui_CreateContext('Smart Export')
+	ctx = reaper.ImGui_CreateContext('Advanced items repositioning')
 	font = reaper.ImGui_CreateFont('sans-serif', 13)
 	reaper.ImGui_Attach(ctx, font)
 
+	save_settings = reaper.GetExtState("vf_reposition_items_settings", "save_settings")
+
 	-- Restore default or saved parameters & settings
+
+	if save_settings == "" then save_settings = nil end		
+	if save_settings == "true" then save_settings = true end
+	if save_settings == "false" then save_settings = false end	
+	close_window = reaper.GetExtState("vf_reposition_items_settings", "close_window")
+	if close_window == "" then close_window = nil end			
+	if close_window == "true" then close_window = true end
+	if close_window == "false" then close_window = false end
+	disable_autoxfade = reaper.GetExtState("vf_reposition_items_settings", "disable_autoxfade")
+	if disable_autoxfade == "" then disable_autoxfade = nil end
+	if disable_autoxfade == "true" then disable_autoxfade = true end
+	if disable_autoxfade == "false" then disable_autoxfade = false end
+	group_offset_option = reaper.GetExtState("vf_reposition_items_settings", "group_offset_option")
+	if group_offset_option == "" then group_offset_option = nil end
+	if group_offset_option == "true" then group_offset_option = true end
+	if group_offset_option == "false" then group_offset_option = false end		
+	hide_tooltip = reaper.GetExtState("vf_reposition_items_settings", "hide_tooltip")	
+	if hide_tooltip == "" then hide_tooltip = nil end		
+	if hide_tooltip == "true" then hide_tooltip = true end
+	if hide_tooltip == "false" then hide_tooltip = false end	
+
 	if save_settings == true then interval_sec = reaper.GetExtState("vf_reposition_items", "interval_sec") else interval_sec = reaper.GetExtState("vf_reposition_items_default", "interval_sec") end
 	if interval_sec == "" then interval_sec = nil end
 	if save_settings == true then interval_frame = reaper.GetExtState("vf_reposition_items", "interval_frame") else interval_frame = reaper.GetExtState("vf_reposition_items_default", "interval_frame") end
@@ -544,29 +566,8 @@ function Init()
 	if autoxfade == "" then autoxfade = nil end		
 	if autoxfade == "true" then autoxfade = true end
 	if autoxfade == "false" then autoxfade = false end		
-
-	save_settings = reaper.GetExtState("vf_reposition_items_settings", "save_settings")
-	if save_settings == "" then save_settings = nil end		
-	if save_settings == "true" then save_settings = true end
-	if save_settings == "false" then save_settings = false end	
-	close_window = reaper.GetExtState("vf_reposition_items_settings", "close_window")
-	if close_window == "" then close_window = nil end			
-	if close_window == "true" then close_window = true end
-	if close_window == "false" then close_window = false end
-	disable_autoxfade = reaper.GetExtState("vf_reposition_items_settings", "disable_autoxfade")
-	if disable_autoxfade == "" then disable_autoxfade = nil end
-	if disable_autoxfade == "true" then disable_autoxfade = true end
-	if disable_autoxfade == "false" then disable_autoxfade = false end
-	group_offset_option = reaper.GetExtState("vf_reposition_items_settings", "group_offset_option")
-	if group_offset_option == "" then group_offset_option = nil end
-	if group_offset_option == "true" then group_offset_option = true end
-	if group_offset_option == "false" then group_offset_option = false end		
-	hide_tooltip = reaper.GetExtState("vf_reposition_items_settings", "hide_tooltip")	
-	if hide_tooltip == "" then hide_tooltip = nil end		
-	if hide_tooltip == "true" then hide_tooltip = true end
-	if hide_tooltip == "false" then hide_tooltip = false end				
-
-	return true
+			
+	return true	
 end
 
 function Post()
