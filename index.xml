@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="5fcb777f85b2e3c838ee078d9d4f3cdde1734a46">
+<index version="1" name="VF_ReaScripts" commit="0c30d8d03e2491df61fcb3772462a4b57edc280a">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -10,15 +10,17 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Advanced items repositioning\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Use start or end of items to reposition\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab 3 modes: TRACK, QUEUE & TIMELINE\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Set interval between items in seconds, frames or beats\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Set interval between items in seconds, frames or beats (can be negative values)\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Optionally add time offset between groups of items with the same name\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Non-linear factor to create rallentando & accelerando\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve overlapping items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to preserve adjacent items\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Toggle to auto-crossfade items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Realtime mode\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support moving envelope points with items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support NVK folder items\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Option to save default values\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Can generate no GUI scripts using current values (useful to save presets or use in custom actions)\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 Dependencies\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
@@ -70,6 +72,17 @@ Few other small improvements]]></changelog>
 A bunch of small fixes]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/5fcb777f85b2e3c838ee078d9d4f3cdde1734a46/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
         <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/5fcb777f85b2e3c838ee078d9d4f3cdde1734a46/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
+      </version>
+      <version name="1.4.1" author="Vincent Fliniaux (Infrabass)" time="2023-06-27T03:50:53Z">
+        <changelog><![CDATA[Allow negative interval values (useful to consolidate and crossfade edited recordings)
+Add auto-crossfade button as this is now a critical parameter
+Replace option to disable auto-crossfade by option to disable auto-crossfade when using start mode
+Add a button in settings tab to save current values as default values
+Set keyboard focus to the interval parameter when script start		
+Change in behaviour induced by introduction of negative interval value feature, now the script reset the initial position of selected items before repositioning, so initial overlapping or adjacent items are always kept in memory
+Fix a few rare issues]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/0c30d8d03e2491df61fcb3772462a4b57edc280a/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/0c30d8d03e2491df61fcb3772462a4b57edc280a/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
       </version>
     </reapack>
   </category>
