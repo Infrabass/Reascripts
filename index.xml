@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="0c30d8d03e2491df61fcb3772462a4b57edc280a">
+<index version="1" name="VF_ReaScripts" commit="daeeb14f4826913194a94b33cdd397dde0e23b86">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
@@ -83,6 +83,11 @@ Change in behaviour induced by introduction of negative interval value feature, 
 Fix a few rare issues]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/0c30d8d03e2491df61fcb3772462a4b57edc280a/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
         <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/0c30d8d03e2491df61fcb3772462a4b57edc280a/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
+      </version>
+      <version name="1.4.3" author="Vincent Fliniaux (Infrabass)" time="2023-07-24T04:12:14Z">
+        <changelog><![CDATA[Fix saved settings not loaded correctly at startup]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/daeeb14f4826913194a94b33cdd397dde0e23b86/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/daeeb14f4826913194a94b33cdd397dde0e23b86/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
       </version>
     </reapack>
   </category>
