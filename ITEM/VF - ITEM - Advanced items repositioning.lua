@@ -2,9 +2,13 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.4.3
+-- @Version 1.5
 -- @Changelog
---   Fix saved settings not loaded correctly at startup
+--   Fix incorrect window size introduced by ReaImGui 0.10 changes
+--   Add support to change font size
+--   Add a button to reset values to the defaults established in the settings
+--   Update UI
+--   Slightly improve performances
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -38,6 +42,12 @@ Special thanks to
 
 --[[
 Full Changelog:
+	v1.5
+		+ Fix incorrect window size introduced by ReaImGui 0.10 changes
+		+ Add support to change font size
+		+ Add a button to reset values to the defaults established in the settings
+		+ Update UI
+		+ Slightly improve performances	
 	v1.4.3
 		+ Fix saved settings not loaded correctly at startup
 	v1.4.1
@@ -74,6 +84,7 @@ Full Changelog:
 		+ Add warning message if user starts the script with zero or one selected item
 		+ Remove option to resize the window			 
 ]]
+
 
 ------------------------------------------------------------------------------------
 -- UTILITIES
@@ -142,6 +153,8 @@ end
 ------------------------------------------------------------------------------------
 -- SECONDARY FUNCTIONS
 ------------------------------------------------------------------------------------
+
+-- math.randomseed(math.floor(reaper.time_precise()*1000)) -- seems to facilitate greater randomization at fast rate thanks to milliseconds count
 
 function ResetSavedParameters()
 	reaper.SetExtState("vf_reposition_items", "interval_sec", "", true)
@@ -460,6 +473,8 @@ end
 -- MAIN FUNCTIONS
 ------------------------------------------------------------------------------------
 
+local ImGui
+
 function Init()
 
 	if not reaper.SNM_GetIntConfigVar then
@@ -490,7 +505,10 @@ function Init()
 		return false
 	end	
 
-	dofile(reaper.GetResourcePath() .. '/Scripts/ReaTeam Extensions/API/imgui.lua')('0.8.6')
+	-- dofile(reaper.GetResourcePath() .. '/Scripts/ReaTeam Extensions/API/imgui.lua')('0.8.6')
+
+	package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua'
+	ImGui = require 'imgui' '0.10'
 
 	local info = debug.getinfo(1,'S')
 	script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
@@ -508,9 +526,9 @@ function Init()
 	
 	autoxfade_option = reaper.GetToggleCommandState(40041) -- Options: Auto-crossfade media items when editing		
 
-	ctx = reaper.ImGui_CreateContext('Advanced items repositioning')
-	font = reaper.ImGui_CreateFont('sans-serif', 13)
-	reaper.ImGui_Attach(ctx, font)
+	ctx = ImGui.CreateContext('Advanced items repositioning')
+	font = ImGui.CreateFont('sans-serif')
+	ImGui.Attach(ctx, font)
 
 	save_settings = reaper.GetExtState("vf_reposition_items_settings", "save_settings")
 
@@ -535,6 +553,8 @@ function Init()
 	if hide_tooltip == "" then hide_tooltip = nil end		
 	if hide_tooltip == "true" then hide_tooltip = true end
 	if hide_tooltip == "false" then hide_tooltip = false end	
+	font_size = reaper.GetExtState("vf_reposition_items_settings", "font_size")
+	if font_size == "" then font_size = nil else font_size = tonumber(font_size) end
 
 	if save_settings == true then interval_sec = reaper.GetExtState("vf_reposition_items", "interval_sec") else interval_sec = reaper.GetExtState("vf_reposition_items_default", "interval_sec") end
 	if interval_sec == "" then interval_sec = nil end
@@ -616,6 +636,14 @@ function Main(interval, offset, non_linear)
 		end
 
 		for j=1, #item_list do
+			-- -- TEMP QUICK RANDOM FEATURE
+			-- if random_checkbox == true then
+			-- 	interval = (math.random() - 0.5) * (init_interval * 2)
+			-- 	--Print(interval)
+			-- end			
+			-------------------------------------------
+
+
 			local item = item_list[j].item
 
 			-- Add position offset if new group of item is detected (different take name)
@@ -681,20 +709,20 @@ end
 ------------------------------------------------------------------------------------
 
 function ToolTip(text)
-	if reaper.ImGui_IsItemHovered(ctx, reaper.ImGui_HoveredFlags_DelayNormal() | reaper.ImGui_HoveredFlags_AllowWhenDisabled()) then
-		reaper.ImGui_BeginTooltip(ctx)
-		reaper.ImGui_PushTextWrapPos(ctx, reaper.ImGui_GetFontSize(ctx) * 35.0)
-		reaper.ImGui_Text(ctx, text)
-		reaper.ImGui_PopTextWrapPos(ctx)
-		reaper.ImGui_EndTooltip(ctx)
+	if ImGui.IsItemHovered(ctx, ImGui.HoveredFlags_DelayNormal | ImGui.HoveredFlags_AllowWhenDisabled) then
+		ImGui.BeginTooltip(ctx)
+		ImGui.PushTextWrapPos(ctx, ImGui.GetFontSize(ctx) * 35.0)
+		ImGui.Text(ctx, text)
+		ImGui.PopTextWrapPos(ctx)
+		ImGui.EndTooltip(ctx)
 	end
 end
 
 function ResetOnDoubleClick(id, value, default)
-	if reaper.ImGui_IsItemDeactivated(ctx) and reset[id] then
+	if ImGui.IsItemDeactivated(ctx) and reset[id] then
 		reset[id] = nil
 		return default
-	elseif reaper.ImGui_IsItemHovered(ctx) and reaper.ImGui_IsMouseDoubleClicked(ctx, 0) then
+	elseif ImGui.IsItemHovered(ctx) and ImGui.IsMouseDoubleClicked(ctx, 0) then
 		reset[id] = true
 	end
 	return value
@@ -702,18 +730,18 @@ end
 
 function SliderDouble(id, value, min, max, default_value)
 	local rv
-	rv,value = reaper.ImGui_SliderDouble(ctx, id, value, min, max, "%.2f")
+	rv,value = ImGui.SliderDouble(ctx, id, value, min, max, "%.2f")
 	value = ResetOnDoubleClick(id, value, default_value)
 	local changed
-	if not changed then changed = reaper.ImGui_IsItemDeactivatedAfterEdit(ctx) end
+	if not changed then changed = ImGui.IsItemDeactivatedAfterEdit(ctx) end
 	return changed, value
 end
 
 function ResetOnAltClick(id, value, default)
-	if reaper.ImGui_IsItemDeactivated(ctx) and reset[id] then
+	if ImGui.IsItemDeactivated(ctx) and reset[id] then
 		reset[id] = nil
 		return default
-	elseif reaper.ImGui_IsItemClicked(ctx, 0) and reaper.ImGui_IsKeyDown(ctx, reaper.ImGui_Mod_Alt()) then
+	elseif ImGui.IsItemClicked(ctx, 0) and ImGui.IsKeyDown(ctx, ImGui.Mod_Alt) then
 		reset[id] = true
 	end
 	return value
@@ -721,59 +749,53 @@ end
 
 function DragDouble(id, value, min, max, default_value)
 	local rv
-	rv, value = reaper.ImGui_DragDouble(ctx, id, value, 0.001, min, max, "%.2f")
-	--rv,value = reaper.ImGui_SliderDouble(ctx, id, value, min, max, "%.2f")
+	rv, value = ImGui.DragDouble(ctx, id, value, 0.001, min, max, "%.2f")
+	--rv,value = ImGui.SliderDouble(ctx, id, value, min, max, "%.2f")
 	value = ResetOnAltClick(id, value, default_value)
 	local changed
-	--if not changed then changed = reaper.ImGui_IsItemDeactivatedAfterEdit(ctx) end
-	if not changed then changed = reaper.ImGui_IsItemDeactivated(ctx) end
+	--if not changed then changed = ImGui.IsItemDeactivatedAfterEdit(ctx) end
+	if not changed then changed = ImGui.IsItemDeactivated(ctx) end
 	return changed, value
 end
 
 function DoubleInputDisabled(label, value, step, default_value, format, state, tooltip)
 	local flags = 0
 	if state == false then
-		flags = flags | reaper.ImGui_InputTextFlags_ReadOnly()
-		local textDisabled = reaper.ImGui_GetStyleColor(ctx, reaper.ImGui_Col_TextDisabled())
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), textDisabled);
+		flags = flags | ImGui.InputTextFlags_ReadOnly
+		local textDisabled = ImGui.GetStyleColor(ctx, ImGui.Col_TextDisabled)
+		ImGui.PushStyleColor(ctx, ImGui.Col_Text, textDisabled);
 	end	
 
 	if not value then value = default_value end
-	local rv, value = reaper.ImGui_InputDouble(ctx, "##" .. label, value, step, step_fastIn, format, flags)
-	reaper.ImGui_SameLine(ctx)
-	reaper.ImGui_Text(ctx, label)
+	local rv, value = ImGui.InputDouble(ctx, "##" .. label, value, step, step_fastIn, format, flags)
 
-	local hover
-	if reaper.ImGui_IsItemHovered(ctx) then
-		hover = true
+	if state == false then
+		ImGui.PopStyleColor(ctx)
 	end
 
-	local click
-	if reaper.ImGui_IsItemClicked(ctx) then
-		click = true
+	ImGui.SameLine(ctx)
+	-- ImGui.Text(ctx, label)
+	-- local rv, state = ImGui.Button(ctx, label, font_size * 7)
+	local rv_state
+	rv_state, state = ToggleButton(ctx, label, state, font_size * 7)
+	if rv_state then
+		rv = true
 	end
 
 	if hide_tooltip == false then
 		ToolTip(tooltip)
 	end
 
-	if state == false then
-		reaper.ImGui_PopStyleColor(ctx)
-	end
-
-	if click then
-		if state == false then state = true else state = false end
-	end
 	return rv, value, state
 end
 
 function ToggleButton(ctx, label, selected, size_w, size_h)
   if selected then
-    local col_active = reaper.ImGui_GetStyleColor(ctx, reaper.ImGui_Col_ButtonActive())
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), col_active)
+    local col_active = ImGui.GetStyleColor(ctx, ImGui.Col_ButtonActive)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Button, col_active)
   end
-  local toggled = reaper.ImGui_Button(ctx, label, size_w, size_h)
-  if selected then reaper.ImGui_PopStyleColor(ctx) end
+  local toggled = ImGui.Button(ctx, label, size_w, size_h)
+  if selected then ImGui.PopStyleColor(ctx) end
   if toggled then selected = not selected end
   return toggled, selected
 end
@@ -883,7 +905,8 @@ function Frame()
 	if close_window == nil then close_window = false end
 	if disable_autoxfade == nil then disable_autoxfade = true end
 	if group_offset_option == nil then group_offset_option = true end
-	if hide_tooltip == nil then hide_tooltip = false end	
+	if hide_tooltip == nil then hide_tooltip = false end
+	if font_size == nil then font_size = 13 end
 
 	-- Check if item selection have changed, if yes save new initial state to restore if cancel button is clicked, store overlapping items
 	if reaper.GetProjectStateChangeCount(0) ~= previous_proj_state and realtime == false then
@@ -899,115 +922,27 @@ function Frame()
 	end
 	previous_proj_state = reaper.GetProjectStateChangeCount(0)
 
-	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FrameRounding(), 10, val2In)
-	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_GrabRounding(), 10, val2In)
+	ImGui.PushStyleVar(ctx, ImGui.StyleVar_FrameRounding, 3, val2In)
+	ImGui.PushStyleVar(ctx, ImGui.StyleVar_GrabRounding, 3, val2In)
 
-	reaper.ImGui_BeginTabBar(ctx, "MyTabs")
+	ImGui.BeginTabBar(ctx, "MyTabs")
 
 	-- Main Tab
-	if reaper.ImGui_BeginTabItem(ctx, "Main", false) then
-		reaper.ImGui_Dummy(ctx, 0, 0)
-
-		-- Interval
-		reaper.ImGui_PushItemWidth(ctx, 90)
-		reaper.ImGui_PushStyleVar(ctx,  reaper.ImGui_StyleVar_FramePadding(), 6, 4)
-		if toggle_val == 0 then					
-			local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.7)
-			local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
-			local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
-			local bg_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.3)
-			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
-			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
-			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)			
-			reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBg(), bg_new_color)
-		end	
-
-		if interval_mode == 0 then	
-			if first_run then
-				reaper.ImGui_SetKeyboardFocusHere(ctx)
-				first_run = nil
-			end		
-			rv_interval_sec, interval_sec = reaper.ImGui_InputDouble(ctx, '##Interval', interval_sec, 0.5, 0.1, '%.1f')
-			if toggle == "start" and interval_sec < 0 then interval_sec = 0 end
-			if save_settings == true then
-				reaper.SetExtState("vf_reposition_items", "interval_sec", tostring(interval_sec), true)
-			end
-			interval = interval_sec
-		elseif interval_mode == 1 then
-			if first_run then
-				reaper.ImGui_SetKeyboardFocusHere(ctx)
-				first_run = nil
-			end	
-			rv_interval_frame, interval_frame = reaper.ImGui_InputInt(ctx, '##Interval', interval_frame, 1, 1)
-			if toggle == "start" and interval_frame < 0 then interval_frame = 0 end			
-			if save_settings == true then
-				reaper.SetExtState("vf_reposition_items", "interval_frame", tostring(interval_frame), true)
-			end		
-			local framerate, dropFrameOut = reaper.TimeMap_curFrameRate(0)	
-			interval = interval_frame * (1/framerate)
-		elseif interval_mode == 2 then		
-			local beats = "8/1\0".."4/1\0".."2/1\0".."1/1\0".."1/2\0".."1/4\0".."1/8\0".."1/16\0".."1/32\0"
-			rv_interval_beats, interval_beats = reaper.ImGui_Combo(ctx, "##Interval", interval_beats, beats, 9)
-			if save_settings == true then
-				reaper.SetExtState("vf_reposition_items", "interval_beats", tostring(interval_beats), true)
-			end			
-			local beats_to_whole_note = {8,4,2,1,0.5,0.25,0.125,0.0625, 0.03125}
-			local whole_note = reaper.TimeMap2_QNToTime(0, 4)	
-			interval = beats_to_whole_note[interval_beats+1] * whole_note
-		end		
-		reaper.ImGui_PopItemWidth(ctx)
-		reaper.ImGui_SameLine(ctx)
-		reaper.ImGui_PushItemWidth(ctx, 72)
-		local interval_modes = "secs\0frames\0beats\0"
-		rv_interval_mode, interval_mode = reaper.ImGui_Combo(ctx, "##interval_mode", interval_mode, interval_modes)		
-		if save_settings == true then
-			reaper.SetExtState("vf_reposition_items", "interval_mode", tostring(interval_mode), true)
-		end				
-		reaper.ImGui_PopItemWidth(ctx)
-		reaper.ImGui_PopStyleVar(ctx)
-		reaper.ImGui_SameLine(ctx)
-		reaper.ImGui_Text(ctx, "Interval")
-		reaper.ImGui_Dummy(ctx, 0, 0)
-		
-		-- Group offset double input
-		reaper.ImGui_PushStyleVar(ctx,  reaper.ImGui_StyleVar_FramePadding(), 6, 4)
-		reaper.ImGui_PushItemWidth(ctx, 170)
-		if not offset_state then offset_state = false end
-		rv_offset_val, offset_val, offset_state = DoubleInputDisabled("Group Offset", offset_val, 1, 3, '%.1f sec', offset_state, "Time offset between items with unique name, useful to separate group of items with the same name")
-		if save_settings == true then
-			reaper.SetExtState("vf_reposition_items", "offset_val", tostring(offset_val), true)
-			reaper.SetExtState("vf_reposition_items", "offset_state", tostring(offset_state), true)
-		end
-		offset = offset_val
-		if offset_state == false then offset = 0 end	
-		reaper.ImGui_Dummy(ctx, 0, 0)
-
-		--- Non-linear factor horizontal float
-		rv_non_linear, non_linear = DragDouble('##Non-linear Factor', non_linear, 0, 10, non_linear_default_value)
-		--rv, non_linear = SliderDouble('##Non-linear Factor', non_linear, 0.5, 1.5, non_linear_default_value)
-		reaper.ImGui_SameLine(ctx)
-		reaper.ImGui_Text(ctx, "Non-linear Factor")
-		if hide_tooltip == false then
-			ToolTip("Value > 1 will create a rallentando and value < 1 will create an accelerando\nAlt+click to reset\nShift+drag for larger increment")
-		end
-		reaper.ImGui_PopStyleVar(ctx)		
-		reaper.ImGui_PopItemWidth(ctx)
-		if toggle_val == 0 then	
-			reaper.ImGui_PopStyleColor(ctx, 4)			
-		end			
-		reaper.ImGui_Dummy(ctx, 0, 0)
+	if ImGui.BeginTabItem(ctx, "Main", false) then
+		ImGui.Dummy(ctx, 0, 0)
 
 		--- Start/End radio
 		if FI_detected == true and realtime == true then
 			toggle_val = 1
-			reaper.ImGui_BeginDisabled(ctx, 1)
+			ImGui.BeginDisabled(ctx, 1)
 		end		
-		rv_toggle_val, toggle_val = reaper.ImGui_RadioButtonEx(ctx, 'Start', toggle_val, 0); reaper.ImGui_SameLine(ctx)
+
+		rv_toggle_val, toggle_val = ImGui.RadioButtonEx(ctx, 'Start', toggle_val, 0); ImGui.SameLine(ctx)
 		if FI_detected == true and realtime == true then
-			reaper.ImGui_EndDisabled(ctx)
+			ImGui.EndDisabled(ctx)
 		end
-		rv_toggle_val, toggle_val = reaper.ImGui_RadioButtonEx(ctx, 'End', toggle_val, 1)
-		if save_settings == true then
+		rv_toggle_val_end, toggle_val = ImGui.RadioButtonEx(ctx, 'End', toggle_val, 1)
+		if rv_toggle_val or rv_toggle_val_end and save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "toggle_val", tostring(toggle_val), true)
 		end
 		if toggle_val == 0 then toggle = "start"
@@ -1020,14 +955,138 @@ function Frame()
 				autoxfade = autoxfade_before_force_disable
 				force_autoxfade = false
 			end
+		end			
+		ImGui.SameLine(ctx); ImGui.Dummy(ctx, 2, 0); ImGui.SameLine(ctx)
+
+		-- Realtime button
+		if FI_detected == true and realtime == true and interval and interval < 0 then
+			reaper.ShowMessageBox("Realtime mode is not compatible with negative interval value when at least one nvk folder item is selected", "REALTIME MODE\nhave been deactivated", 0)
+		end		
+		-- local button_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.5)
+		-- local hover_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
+		-- local active_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
+		local button_new_color = ImGui.ColorConvertDouble4ToU32(0.7, 0.5, 0.2, 0.5)
+		local hover_new_color = ImGui.ColorConvertDouble4ToU32(0.7, 0.5, 0.2, 1.0)
+		local active_new_color = ImGui.ColorConvertDouble4ToU32(0.7, 0.5, 0.2, 0.8)		
+		ImGui.PushStyleColor(ctx, ImGui.Col_Button, button_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, hover_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, active_new_color)					
+		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
+			realtime = false			
+			ImGui.BeginDisabled(ctx, 1)
+		end			
+		rv_realtime, realtime = ToggleButton(ctx, 'Realtime mode', realtime, font_size * 9)
+		ImGui.PushFont(ctx, nil, font_size)
+		if hide_tooltip == false then
+			ToolTip("Reposition selected items in realtime\nItem selection can't be changed while this mode is active\nNot compatible with start mode if at least one nvk folder items is selected")
+		end			
+		ImGui.PopFont(ctx)
+		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
+			ImGui.EndDisabled(ctx)
+		end			
+		ImGui.PopStyleColor(ctx, 3)
+		if realtime == true then
+			ForceSelectItems(t_initial_selection)
+		end		
+
+		ImGui.Dummy(ctx, 0, 0)
+
+		-- Interval
+		ImGui.PushItemWidth(ctx, font_size * 8)
+		ImGui.PushStyleVar(ctx,  ImGui.StyleVar_FramePadding, 6, 4)
+		if toggle_val == 0 then					
+			local button_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.7)
+			local hover_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
+			local active_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
+			local bg_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.3)
+			ImGui.PushStyleColor(ctx, ImGui.Col_Button, button_new_color)
+			ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, hover_new_color)
+			ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, active_new_color)			
+			ImGui.PushStyleColor(ctx, ImGui.Col_FrameBg, bg_new_color)
+		end	
+
+		if interval_mode == 0 then	
+			if first_run then
+				ImGui.SetKeyboardFocusHere(ctx)
+				first_run = nil
+			end		
+			rv_interval_sec, interval_sec = ImGui.InputDouble(ctx, '##Interval', interval_sec, 0.5, 0.1, '%.1f')
+			if toggle == "start" and interval_sec < 0 then interval_sec = 0 end
+			if rv_interval_sec and save_settings == true then
+				reaper.SetExtState("vf_reposition_items", "interval_sec", tostring(interval_sec), true)
+			end
+			interval = interval_sec
+		elseif interval_mode == 1 then
+			if first_run then
+				ImGui.SetKeyboardFocusHere(ctx)
+				first_run = nil
+			end	
+			rv_interval_frame, interval_frame = ImGui.InputInt(ctx, '##Interval', interval_frame, 1, 1)
+			if toggle == "start" and interval_frame < 0 then interval_frame = 0 end			
+			if rv_interval_frame and save_settings == true then
+				reaper.SetExtState("vf_reposition_items", "interval_frame", tostring(interval_frame), true)
+			end		
+			local framerate, dropFrameOut = reaper.TimeMap_curFrameRate(0)	
+			interval = interval_frame * (1/framerate)
+		elseif interval_mode == 2 then		
+			local beats = "8/1\0".."4/1\0".."2/1\0".."1/1\0".."1/2\0".."1/4\0".."1/8\0".."1/16\0".."1/32\0"
+			rv_interval_beats, interval_beats = ImGui.Combo(ctx, "##Interval", interval_beats, beats, 9)
+			if rv_interval_beats and save_settings == true then
+				reaper.SetExtState("vf_reposition_items", "interval_beats", tostring(interval_beats), true)
+			end			
+			local beats_to_whole_note = {8,4,2,1,0.5,0.25,0.125,0.0625, 0.03125}
+			local whole_note = reaper.TimeMap2_QNToTime(0, 4)	
+			interval = beats_to_whole_note[interval_beats+1] * whole_note
+		end		
+		ImGui.PopItemWidth(ctx)
+		ImGui.SameLine(ctx)
+		ImGui.PushItemWidth(ctx, font_size * 6)
+		local interval_modes = "secs\0frames\0beats\0"
+		rv_interval_mode, interval_mode = ImGui.Combo(ctx, "##interval_mode", interval_mode, interval_modes)		
+		if rv_interval_mode and save_settings == true then
+			reaper.SetExtState("vf_reposition_items", "interval_mode", tostring(interval_mode), true)
 		end				
-		reaper.ImGui_Dummy(ctx, 0, 0)
+		ImGui.PopItemWidth(ctx)
+		ImGui.PopStyleVar(ctx)
+		ImGui.SameLine(ctx)
+		ImGui.Text(ctx, "Interval")
+		-- ImGui.SameLine(ctx)
+		-- rv, random_checkbox = ImGui.Checkbox(ctx, "Rand", random_checkbox)
+		ImGui.Dummy(ctx, 0, 0)
+		
+		-- Group offset double input
+		ImGui.PushStyleVar(ctx,  ImGui.StyleVar_FramePadding, 6, 4)
+		ImGui.PushItemWidth(ctx, font_size * 10)
+		if not offset_state then offset_state = false end
+		rv_offset_val, offset_val, offset_state = DoubleInputDisabled("Group Offset", offset_val, 1, 3, '%.1f secs', offset_state, "Time offset between items with unique name, useful to separate group of items with the same name")
+		if rv_offset_val and save_settings == true then
+			reaper.SetExtState("vf_reposition_items", "offset_val", tostring(offset_val), true)
+			reaper.SetExtState("vf_reposition_items", "offset_state", tostring(offset_state), true)
+		end
+		offset = offset_val
+		if offset_state == false then offset = 0 end	
+		ImGui.Dummy(ctx, 0, 0)
+
+		--- Non-linear factor horizontal float
+		rv_non_linear, non_linear = DragDouble('##Non-linear Factor', non_linear, 0, 10, non_linear_default_value)
+		--rv, non_linear = SliderDouble('##Non-linear Factor', non_linear, 0.5, 1.5, non_linear_default_value)
+		ImGui.SameLine(ctx)
+		ImGui.Text(ctx, "Non-linear Factor")
+		if hide_tooltip == false then
+			ToolTip("Value > 1 will create a rallentando and value < 1 will create an accelerando\nAlt+click to reset\nShift+drag for larger increment")
+		end
+		ImGui.PopStyleVar(ctx)		
+		ImGui.PopItemWidth(ctx)
+		if toggle_val == 0 then	
+			ImGui.PopStyleColor(ctx, 4)			
+		end			
+		ImGui.Dummy(ctx, 0, 0)
 
 		-- Mode radio
-		rv_mode_val, mode_val = reaper.ImGui_RadioButtonEx(ctx, 'Track', mode_val, 0); reaper.ImGui_SameLine(ctx)
-		rv_mode_val, mode_val = reaper.ImGui_RadioButtonEx(ctx, 'Queue', mode_val, 1); reaper.ImGui_SameLine(ctx)
-		rv_mode_val, mode_val  = reaper.ImGui_RadioButtonEx(ctx, 'Timeline', mode_val, 2)  
-		if save_settings == true then
+		rv_mode_val_track, mode_val = ImGui.RadioButtonEx(ctx, 'Track', mode_val, 0); ImGui.SameLine(ctx)
+		rv_mode_val_queue, mode_val = ImGui.RadioButtonEx(ctx, 'Queue', mode_val, 1); ImGui.SameLine(ctx)
+		rv_mode_val_timeline, mode_val  = ImGui.RadioButtonEx(ctx, 'Timeline', mode_val, 2)  
+		if rv_mode_val_track or rv_mode_val_queue or rv_mode_val_timeline and save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "mode_val", tostring(mode_val), true)
 		end
 		if mode_val == 0 then mode = "track"
@@ -1036,33 +1095,33 @@ function Frame()
 		if hide_tooltip == false then
 			ToolTip("Track mode = for each track, start at first item's position\nQueue mode = for each track, start at last repositioned item position in previous track\nTimeline mode = Reposition accross tracks")
 		end
-		reaper.ImGui_Dummy(ctx, 0, 0)
+		ImGui.Dummy(ctx, 0, 0)
 			
 		-- Overlap, Adjacent & Auto-crossfade Buttons
-		rv_overlap, overlap = ToggleButton(ctx, 'Overlap', overlap, 75, 20)
-		if save_settings == true then
+		rv_overlap, overlap = ToggleButton(ctx, 'Overlap', overlap, font_size * 5)
+		if rv_overlap and save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "overlap", tostring(overlap), true)
 		end		
 		if hide_tooltip == false then
 			ToolTip("Preserve overlapping items")
 		end	
-		reaper.ImGui_SameLine(ctx)
-		rv_adjacent, adjacent = ToggleButton(ctx, 'Adjacent', adjacent, 75, 20)
-		if save_settings == true then
+		ImGui.SameLine(ctx)
+		rv_adjacent, adjacent = ToggleButton(ctx, 'Adjacent', adjacent, font_size * 5)
+		if rv_adjacent and save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "adjacent", tostring(adjacent), true)
 		end				
 		if hide_tooltip == false then
 			ToolTip("Preserve adjacent items")
 		end	
-		reaper.ImGui_SameLine(ctx)
+		ImGui.SameLine(ctx)
 		if force_autoxfade == true then
-			reaper.ImGui_BeginDisabled(ctx, 1)
+			ImGui.BeginDisabled(ctx, 1)
 		end
-		rv_autoxfade, autoxfade = ToggleButton(ctx, 'Auto-crossfade', autoxfade, 110, 20)
-		if save_settings == true then
+		rv_autoxfade, autoxfade = ToggleButton(ctx, 'Auto-crossfade', autoxfade, font_size * 8)
+		if rv_autoxfade and save_settings == true then
 			reaper.SetExtState("vf_reposition_items", "autoxfade", tostring(autoxfade), true)
 		end		
-		if reaper.ImGui_IsItemHovered(ctx) and reaper.ImGui_IsMouseReleased(ctx, reaper.ImGui_MouseButton_Left()) then		
+		if ImGui.IsItemHovered(ctx) and ImGui.IsMouseReleased(ctx, ImGui.MouseButton_Left) then		
 			autoxfade_before_force_disable = autoxfade
 		end		
 
@@ -1070,35 +1129,40 @@ function Frame()
 			ToolTip("Temporary toggle native auto-crossfade option")
 		end
 		if force_autoxfade == true then
-			reaper.ImGui_EndDisabled(ctx)
+			ImGui.EndDisabled(ctx)
 		end		
 		if autoxfade == true then
 			Command(41118) -- Options: Enable auto-crossfades
 		else
 			Command(41119) -- Options: Disable auto-crossfades
 		end
-		reaper.ImGui_Dummy(ctx, 0, 4)
+		ImGui.Dummy(ctx, 0, 2)
 
 		local sel_item_nb = tostring(reaper.CountSelectedMediaItems(0))
-		reaper.ImGui_SeparatorText(ctx, tostring(sel_item_nb).." selected item(s)")
-		reaper.ImGui_Dummy(ctx, 0, 4)
+		ImGui.SeparatorText(ctx, tostring(sel_item_nb).." selected item(s)")
+		ImGui.Dummy(ctx, 0, 2)
 
 		-- Apply/Cancel & Realtime Buttons
-		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.3, 0.3, 0.3, 1.0)
-		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.4, 0.4, 0.4, 1.0)
-		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 0.5, 1.0)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)
-		rv_apply = reaper.ImGui_Button(ctx, 'Apply', 75, 20)
+		ImGui.PushFont(ctx, nil, font_size + 2)
+		ImGui.PushStyleVar(ctx, ImGui.StyleVar_FrameRounding, 20, val2In)
+
+		rv_apply = ImGui.Button(ctx, 'Apply', font_size * 5, font_size * 3)
 		if rv_apply then
 			apply = true
 			if close_window == true then
 				open = false
 			end
 		end
-		reaper.ImGui_SameLine(ctx)	
-		rv_cancel = reaper.ImGui_Button(ctx, 'Cancel', 75, 20) 
+		ImGui.SameLine(ctx)	
+
+		local button_new_color = ImGui.ColorConvertDouble4ToU32(0.3, 0.3, 0.3, 1.0)
+		local hover_new_color = ImGui.ColorConvertDouble4ToU32(0.4, 0.4, 0.4, 1.0)
+		local active_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 0.5, 1.0)
+		ImGui.PushStyleColor(ctx, ImGui.Col_Button, button_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, hover_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, active_new_color)
+
+		rv_cancel = ImGui.Button(ctx, 'Cancel', font_size * 5, font_size * 3) 
 		if rv_cancel then
 			--PrintWindowSize()	
 			cancel = true
@@ -1107,43 +1171,80 @@ function Frame()
 			end
 			if realtime == true then realtime = false end
 		end
+		ImGui.PushFont(ctx, nil, font_size)
 		if hide_tooltip == false then
 			ToolTip("Cancel repositioning since last item selection change\n(Can't cancel if nvk folder items have been merged)")
-		end				
-		reaper.ImGui_PopStyleColor(ctx, 3)
-		reaper.ImGui_SameLine(ctx)	
-		if FI_detected == true and realtime == true and interval and interval < 0 then
-			reaper.ShowMessageBox("Realtime mode is not compatible with negative interval value when at least one nvk folder item is selected", "REALTIME MODE\nhave been deactivated", 0)
 		end		
-		local button_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 0.5)
-		local hover_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.5, 1.0, 1.0)
-		local active_new_color = reaper.ImGui_ColorConvertDouble4ToU32(0.5, 0.4, 1.0, 1.0)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), button_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), hover_new_color)
-		reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), active_new_color)					
-		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
-			realtime = false			
-			reaper.ImGui_BeginDisabled(ctx, 1)
-		end			
-		rv_realtime, realtime = ToggleButton(ctx, 'Realtime mode', realtime, 110, 20)
-		if hide_tooltip == false then
-			ToolTip("Reposition selected items in realtime\nItem selection can't be changed while this mode is active\nNot compatible with start mode if at least one nvk folder items is selected")
-		end			
-		if FI_detected == true and (toggle == "start" or (interval and interval < 0)) then
-			reaper.ImGui_EndDisabled(ctx)
-		end	
-		reaper.ImGui_PopStyleColor(ctx, 3)
-		if realtime == true then
-			ForceSelectItems(t_initial_selection)
+		ImGui.PopFont(ctx)		
+		ImGui.PopStyleColor(ctx, 3)
+		ImGui.SameLine(ctx)	
+
+		local button_new_color = ImGui.ColorConvertDouble4ToU32(0.3, 0.3, 0.3, 1.0)
+		local hover_new_color = ImGui.ColorConvertDouble4ToU32(0.4, 0.4, 0.4, 1.0)
+		local active_new_color = ImGui.ColorConvertDouble4ToU32(0.5, 0.5, 0.5, 1.0)
+		ImGui.PushStyleColor(ctx, ImGui.Col_Button, button_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, hover_new_color)
+		ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, active_new_color)
+
+		-- Set to default values button
+		rv_default = ImGui.Button(ctx, 'Default Values', font_size * 8, font_size * 3) 
+		if rv_default then
+			interval_sec = reaper.GetExtState("vf_reposition_items_default", "interval_sec")
+			if interval_sec == "" then interval_sec = nil end
+			interval_frame = reaper.GetExtState("vf_reposition_items_default", "interval_frame")
+			if interval_sec == "" then interval_frame = nil end
+			interval_beats = reaper.GetExtState("vf_reposition_items_default", "interval_beats")			
+			if interval_beats == "" then interval_beats = nil end
+			interval_mode = reaper.GetExtState("vf_reposition_items_default", "interval_mode")
+			if interval_mode == "" then interval_mode = nil end
+			offset_val = reaper.GetExtState("vf_reposition_items_default", "offset_val")
+			if offset_val == "" then offset_val = nil end
+			offset_state = reaper.GetExtState("vf_reposition_items_default", "offset_state")
+			if offset_state == "" then offset_state = nil end
+			if offset_state == "true" then offset_state = true end
+			if offset_state == "false" then offset_state = false end			
+			toggle_val = reaper.GetExtState("vf_reposition_items_default", "toggle_val")	
+			if toggle_val == "" then toggle_val = nil end
+			mode_val = reaper.GetExtState("vf_reposition_items_default", "mode_val")
+			if mode_val == "" then mode_val = nil end
+			overlap = reaper.GetExtState("vf_reposition_items_default", "overlap")			
+			if overlap == "" then overlap = nil end
+			if overlap == "true" then overlap = true end
+			if overlap == "false" then overlap = false end			
+			adjacent = reaper.GetExtState("vf_reposition_items_default", "adjacent")
+			if adjacent == "" then adjacent = nil end
+			if adjacent == "true" then adjacent = true end
+			if adjacent == "false" then adjacent = false end						
+			autoxfade = reaper.GetExtState("vf_reposition_items_default", "autoxfade")
+			if autoxfade == "" then autoxfade = nil end
+			if autoxfade == "true" then autoxfade = true end
+			if autoxfade == "false" then autoxfade = false end									
+			apply = true
+			if close_window == true then
+				open = false
+			end		
 		end
 
-		if reaper.ImGui_IsKeyPressed(ctx, reaper.ImGui_Key_Enter()) then
+		ImGui.PushFont(ctx, nil, font_size)
+		if hide_tooltip == false then
+			ToolTip("Reset values to the defaults saved in the settings")
+		end		
+		ImGui.PopFont(ctx)		
+		ImGui.PopStyleColor(ctx, 3)		
+
+		ImGui.PopStyleVar(ctx, 1)
+		ImGui.PopFont(ctx)
+		-- if realtime == true then
+		-- 	ForceSelectItems(t_initial_selection)
+		-- end
+
+		if ImGui.IsKeyPressed(ctx, ImGui.Key_Enter) then
 			apply = true
 			if close_window == true then
 				open = false
 			end
 		end
-		reaper.ImGui_EndTabItem(ctx)
+		ImGui.EndTabItem(ctx)
 
 		if rv_cancel or rv_apply or rv_adjacent or rv_overlap or rv_autoxfade or rv_realtime or (previous_mode_val ~= mode_val) or (previous_toggle_val ~= toggle_val) or rv_offset_val or (previous_offset_state ~= offset_state) or (previous_interval ~= interval) then
 			update_items = true
@@ -1163,37 +1264,55 @@ function Frame()
 	end
 
 	-- Settings Tab
-	if reaper.ImGui_BeginTabItem(ctx, "Settings", false) then
-		save_settings_toggled, save_settings = reaper.ImGui_Checkbox(ctx, "Save last settings", save_settings)
+	if ImGui.BeginTabItem(ctx, "Settings", false) then
+		save_settings_toggled, save_settings = ImGui.Checkbox(ctx, "Save last settings", save_settings)
 		if hide_tooltip == false then
 			ToolTip("If actived, overwrite the saved default values")
 		end			
 		if save_settings_toggled == true and save_settings == false then
 			ResetSavedParameters()
 		end
-		reaper.SetExtState("vf_reposition_items_settings", "save_settings", tostring(save_settings), true)
-		rv, close_window = reaper.ImGui_Checkbox(ctx, "Close window after applying or cancelling", close_window)
-		reaper.SetExtState("vf_reposition_items_settings", "close_window", tostring(close_window), true)
-		rv_disable_autoxfade, disable_autoxfade = reaper.ImGui_Checkbox(ctx, "Disable auto-crossfade when using start mode", disable_autoxfade)
-		reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true)		
+		if save_settings_toggled then reaper.SetExtState("vf_reposition_items_settings", "save_settings", tostring(save_settings), true) end
+		close_window_toggled, close_window = ImGui.Checkbox(ctx, "Close window after applying or cancelling", close_window)
+		if close_window_toggled then reaper.SetExtState("vf_reposition_items_settings", "close_window", tostring(close_window), true) end
+		rv_disable_autoxfade, disable_autoxfade = ImGui.Checkbox(ctx, "Disable auto-crossfade when using start mode", disable_autoxfade)
+		if rv_disable_autoxfade then reaper.SetExtState("vf_reposition_items_settings", "disable_autoxfade", tostring(disable_autoxfade), true) end
 		if rv_disable_autoxfade and disable_autoxfade == true then autoxfade_before_force_disable = autoxfade end
 		if disable_autoxfade == false then
 			force_autoxfade = false
 			autoxfade = autoxfade_before_force_disable
 		end
-		rv, group_offset_option = reaper.ImGui_Checkbox(ctx, "Group offset ignores numbering & extension", group_offset_option)
+		group_offset_toggled, group_offset_option = ImGui.Checkbox(ctx, "Group offset ignores numbering & extension", group_offset_option)
 		if hide_tooltip == false then
 			ToolTip("If actived, group offset detection will ignore suffix numbering and extension in item's name")
 		end
-		reaper.SetExtState("vf_reposition_items_settings", "group_offset_option", tostring(group_offset_option), true)				
-		rv, hide_tooltip = reaper.ImGui_Checkbox(ctx, "Hide help tooltip", hide_tooltip)
-		reaper.SetExtState("vf_reposition_items_settings", "hide_tooltip", tostring(hide_tooltip), true)
-		reaper.ImGui_Dummy(ctx, 0, 4)
+		if group_offset_toggled then reaper.SetExtState("vf_reposition_items_settings", "group_offset_option", tostring(group_offset_option), true) end
+		hide_tooltip_toggled, hide_tooltip = ImGui.Checkbox(ctx, "Hide help tooltip", hide_tooltip)
+		if hide_tooltip_toggled then reaper.SetExtState("vf_reposition_items_settings", "hide_tooltip", tostring(hide_tooltip), true) end
 
-		reaper.ImGui_Separator(ctx)
-		reaper.ImGui_Dummy(ctx, 0, 4)
 
-		local rv_save_default = reaper.ImGui_Button(ctx, "Save current values as default", 290, 20)
+		ImGui.PushItemWidth(ctx, font_size * 4)
+		ImGui.PushStyleVar(ctx,  ImGui.StyleVar_FramePadding, 6, 4)
+		-- rv, font_size = reaper.ImGui_SliderInt(ctx, "Font Size", font_size, 8, 30)
+		local font_size_asked = font_size
+		rv, font_size_asked = ImGui.InputInt(ctx, 'Font Size', font_size_asked, 0, 0)
+		if ImGui.IsItemDeactivatedAfterEdit(ctx) then
+			font_size = font_size_asked
+			if font_size < 10 then font_size = 10 end
+			if font_size > 24 then font_size = 24 end
+			reaper.SetExtState("vf_reposition_items_settings", "font_size", tostring(font_size), true)
+		end
+
+		ImGui.PopItemWidth(ctx)
+		ImGui.PopStyleVar(ctx, 1)
+
+
+		ImGui.Dummy(ctx, 0, 4)
+
+		ImGui.Separator(ctx)
+		ImGui.Dummy(ctx, 0, 4)
+
+		local rv_save_default = ImGui.Button(ctx, "Save current values as default", font_size * 20)
 		if rv_save_default then 
 			reaper.SetExtState("vf_reposition_items_default", "interval_sec", tostring(interval_sec), true)
 			reaper.SetExtState("vf_reposition_items_default", "interval_frame", tostring(interval_frame), true)
@@ -1208,29 +1327,30 @@ function Frame()
 			reaper.SetExtState("vf_reposition_items_default", "autoxfade", tostring(autoxfade), true)
 			reaper.ShowMessageBox("The default values have been saved", "Advanced items repositioning", 0)			
 		end	
-		reaper.ImGui_Dummy(ctx, 0, 4)		
+		-- ImGui.Dummy(ctx, 0, 0)		
 
-		local rv_gen_script = reaper.ImGui_Button(ctx, "Generate no GUI script with current values", 290, 20)
+		local rv_gen_script = ImGui.Button(ctx, "Generate no GUI script with current values", font_size * 20)
 		if rv_gen_script then GenerateScript(interval_sec, interval_frame, interval_beats, interval_mode, offset_state, offset_val, toggle_val, mode_val, overlap, adjacent, disable_autoxfade) end
 		if hide_tooltip == false then
 			ToolTip("Useful to save presets or use in custom actions")
 		end		
 
-		reaper.ImGui_EndTabItem(ctx)	
+		ImGui.EndTabItem(ctx)	
 	end
 
-	if reaper.ImGui_IsKeyPressed(ctx, reaper.ImGui_Key_Escape()) then
+	if ImGui.IsKeyPressed(ctx, ImGui.Key_Escape) then
 		open = false
 	end	
-	reaper.ImGui_PopStyleVar(ctx, 2)
-	reaper.ImGui_EndTabBar(ctx)
+	ImGui.PopStyleVar(ctx, 2)
+	ImGui.EndTabBar(ctx)
 end
 
 function Loop()
-	reaper.ImGui_PushFont(ctx, font)
-	reaper.ImGui_SetNextWindowSize(ctx, 309, 293, reaper.ImGui_Cond_FirstUseEver()) 
-	reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_WindowRounding(), 10, val2In)
-	visible, open = reaper.ImGui_Begin(ctx, 'Advanced Items Repositioning', true, reaper.ImGui_WindowFlags_NoCollapse() | reaper.ImGui_WindowFlags_NoResize() | reaper.ImGui_WindowFlags_NoDocking())	
+	if font_size == nil then font_size = 13 end
+	ImGui.PushFont(ctx, font, font_size)
+	-- ImGui.SetNextWindowSize(ctx, 309, 293, ImGui.Cond_FirstUseEver) 
+	ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowRounding, 10, val2In)
+	visible, open = ImGui.Begin(ctx, 'Advanced Items Repositioning', true, ImGui.WindowFlags_NoCollapse | ImGui.WindowFlags_AlwaysAutoResize | ImGui.WindowFlags_NoDocking)	
 	if visible then
 		Frame()
 		if apply == true then
@@ -1247,10 +1367,10 @@ function Loop()
 				reaper.Undo_EndBlock2(0, scrName, -1)			
 			end
 		end
-		reaper.ImGui_End(ctx)
+		ImGui.End(ctx)
 	end
-	reaper.ImGui_PopFont(ctx)
-	reaper.ImGui_PopStyleVar(ctx, 1)
+	ImGui.PopFont(ctx)
+	ImGui.PopStyleVar(ctx, 1)
 
 	if cancel then
 		RestoreItemsState(t_initial)
@@ -1276,7 +1396,4 @@ if Init() == true then
 	reaper.defer(Loop)
 end
 reaper.atexit(Post)
-
--- local elapsed = reaper.time_precise() - start
--- Print("Script executed in ".. elapsed .." seconds")
 
