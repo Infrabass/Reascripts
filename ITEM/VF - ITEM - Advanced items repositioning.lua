@@ -2,13 +2,9 @@
 -- @Screenshot https://imgur.com/vI4pc5B
 -- @Author Vincent Fliniaux (Infrabass)
 -- @Links https://github.com/Infrabass/Reascripts
--- @Version 1.5
+-- @Version 1.5.1
 -- @Changelog
---   Fix incorrect window size introduced by ReaImGui 0.10 changes
---   Add support to change font size
---   Add a button to reset values to the defaults established in the settings
---   Update UI
---   Slightly improve performances
+--   Fix the reset button
 -- @Provides
 --   [main] VF - ITEM - Advanced items repositioning.lua
 --   [nomain] VF - ITEM - Advanced items repositioning - last values without GUI.lua
@@ -42,6 +38,8 @@ Special thanks to
 
 --[[
 Full Changelog:
+	v1.5.1
+		+ Fix the reset button
 	v1.5
 		+ Fix incorrect window size introduced by ReaImGui 0.10 changes
 		+ Add support to change font size
@@ -129,7 +127,7 @@ function UpdateFolderItem()
 end
 
 function PrintWindowSize()
-	w, h = reaper.ImGui_GetWindowSize( ctx )
+	w, h = ImGui.GetWindowSize( ctx )
 	Print(w.."\n"..h)		
 end
 
@@ -1009,7 +1007,7 @@ function Frame()
 			if first_run then
 				ImGui.SetKeyboardFocusHere(ctx)
 				first_run = nil
-			end		
+			end	
 			rv_interval_sec, interval_sec = ImGui.InputDouble(ctx, '##Interval', interval_sec, 0.5, 0.1, '%.1f')
 			if toggle == "start" and interval_sec < 0 then interval_sec = 0 end
 			if rv_interval_sec and save_settings == true then
@@ -1164,7 +1162,6 @@ function Frame()
 
 		rv_cancel = ImGui.Button(ctx, 'Cancel', font_size * 5, font_size * 3) 
 		if rv_cancel then
-			--PrintWindowSize()	
 			cancel = true
 			if close_window == true then
 				open = false
@@ -1188,7 +1185,19 @@ function Frame()
 
 		-- Set to default values button
 		rv_default = ImGui.Button(ctx, 'Default Values', font_size * 8, font_size * 3) 
-		if rv_default then
+
+		-- Check if cmd/ctrl + R keys are held to trigger default button
+		local default_shortcut
+		local mod_pressed = ImGui.IsKeyDown(ctx, ImGui.Mod_Super) or ImGui.IsKeyDown(ctx, ImGui.Mod_Ctrl) -- Check if Cmd (macOS) or Ctrl (Windows/Linux) is held down
+		local r_key = ImGui.Key_R
+		local r_pressed = ImGui.IsKeyPressed(ctx, r_key)
+		if mod_pressed and r_pressed then
+			default_shortcut = true
+		end
+
+		if rv_default or default_shortcut then
+
+			-- Reset default values
 			interval_sec = reaper.GetExtState("vf_reposition_items_default", "interval_sec")
 			if interval_sec == "" then interval_sec = nil end
 			interval_frame = reaper.GetExtState("vf_reposition_items_default", "interval_frame")
@@ -1218,16 +1227,31 @@ function Frame()
 			autoxfade = reaper.GetExtState("vf_reposition_items_default", "autoxfade")
 			if autoxfade == "" then autoxfade = nil end
 			if autoxfade == "true" then autoxfade = true end
-			if autoxfade == "false" then autoxfade = false end									
-			apply = true
-			if close_window == true then
-				open = false
-			end		
+			if autoxfade == "false" then autoxfade = false end	
+
+			non_linear = 1 -- reset non-linear slider
+
+			-- Save as last settings
+			if save_settings == true then
+				reaper.SetExtState("vf_reposition_items", "interval_sec", tostring(interval_sec), true)
+				reaper.SetExtState("vf_reposition_items", "interval_frame", tostring(interval_frame), true)
+				reaper.SetExtState("vf_reposition_items", "interval_beats", tostring(interval_beats), true)
+				reaper.SetExtState("vf_reposition_items", "interval_mode", tostring(interval_mode), true)
+				reaper.SetExtState("vf_reposition_items", "offset_val", tostring(offset_val), true)	
+				reaper.SetExtState("vf_reposition_items", "offset_state", tostring(offset_state), true)	
+				reaper.SetExtState("vf_reposition_items", "toggle_val", tostring(toggle_val), true)
+				reaper.SetExtState("vf_reposition_items", "mode_val", tostring(mode_val), true)
+				reaper.SetExtState("vf_reposition_items", "overlap", tostring(overlap), true)
+				reaper.SetExtState("vf_reposition_items", "adjacent", tostring(adjacent), true)
+				reaper.SetExtState("vf_reposition_items", "autoxfade", tostring(autoxfade), true)
+			end			
+
+			default_frame = 2
 		end
 
 		ImGui.PushFont(ctx, nil, font_size)
 		if hide_tooltip == false then
-			ToolTip("Reset values to the defaults saved in the settings")
+			ToolTip("Reset values to the defaults saved in the settings\nAlso triggered by Cmd/Ctrl + R")
 		end		
 		ImGui.PopFont(ctx)		
 		ImGui.PopStyleColor(ctx, 3)		
@@ -1246,8 +1270,8 @@ function Frame()
 		end
 		ImGui.EndTabItem(ctx)
 
-		if rv_cancel or rv_apply or rv_adjacent or rv_overlap or rv_autoxfade or rv_realtime or (previous_mode_val ~= mode_val) or (previous_toggle_val ~= toggle_val) or rv_offset_val or (previous_offset_state ~= offset_state) or (previous_interval ~= interval) then
-			update_items = true
+		if rv_cancel or rv_apply or rv_default or rv_adjacent or rv_overlap or rv_autoxfade or rv_realtime or (previous_mode_val ~= mode_val) or (previous_toggle_val ~= toggle_val) or rv_offset_val or (previous_offset_state ~= offset_state) or (previous_interval ~= interval) then			
+			update_items = true -- used for realtime
 		end
 
 		if count_sel_items > 1500 then
@@ -1261,6 +1285,17 @@ function Frame()
 		previous_non_linear = non_linear	
 		previous_toggle_val = toggle_val
 		previous_mode_val = mode_val	
+
+		if default_frame and default_frame == 0 then
+			apply = true	
+			default_frame = nil
+		end
+
+		-- decrement default button frame counter
+		if default_frame and default_frame > 0 then
+			default_frame = default_frame - 1
+		end		
+
 	end
 
 	-- Settings Tab
@@ -1313,6 +1348,7 @@ function Frame()
 		ImGui.Dummy(ctx, 0, 4)
 
 		local rv_save_default = ImGui.Button(ctx, "Save current values as default", font_size * 20)
+
 		if rv_save_default then 
 			reaper.SetExtState("vf_reposition_items_default", "interval_sec", tostring(interval_sec), true)
 			reaper.SetExtState("vf_reposition_items_default", "interval_frame", tostring(interval_frame), true)
@@ -1360,7 +1396,7 @@ function Loop()
 
 			if realtime == false then
 				reaper.Undo_BeginBlock2(0)
-			end
+			end	
 			Main(interval, offset, non_linear)
 			if realtime == false then
 				scrName = ({reaper.get_action_context()})[2]:match(".+[/\\](.+)")
