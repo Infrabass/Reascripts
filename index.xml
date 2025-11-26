@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="VF_ReaScripts" commit="daeeb14f4826913194a94b33cdd397dde0e23b86">
+<index version="1" name="VF_ReaScripts" commit="d98dca167632126580fde30d3f73367ea5e97a3d">
   <category name="ITEM">
     <reapack name="VF - ITEM - Advanced items repositioning.lua" type="script">
       <metadata>
-        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 Courier;}}
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
 
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Advanced items repositioning\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Advanced items repositioning\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Use start or end of items to reposition\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab 3 modes: TRACK, QUEUE & TIMELINE\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Set interval between items in seconds, frames or beats (can be negative values)\par}
@@ -22,7 +22,7 @@
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Support ripple edit\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Option to save default values\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Can generate no GUI scripts using current values (useful to save presets or use in custom actions)\sa180\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 Dependencies\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Dependencies\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Requires ReaImGui\sa180\par}
 }
 ]]></description>
@@ -89,6 +89,15 @@ Fix a few rare issues]]></changelog>
         <source main="main">https://github.com/Infrabass/Reascripts/raw/daeeb14f4826913194a94b33cdd397dde0e23b86/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
         <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/daeeb14f4826913194a94b33cdd397dde0e23b86/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
       </version>
+      <version name="1.5" author="Vincent Fliniaux (Infrabass)" time="2025-11-26T09:15:54Z">
+        <changelog><![CDATA[Fix incorrect window size introduced by ReaImGui 0.10 changes
+Add support to change font size
+Add a button to reset values to the defaults established in the settings
+Update UI
+Slightly improve performances]]></changelog>
+        <source main="main">https://github.com/Infrabass/Reascripts/raw/d98dca167632126580fde30d3f73367ea5e97a3d/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning.lua</source>
+        <source file="VF - ITEM - Advanced items repositioning - last values without GUI.lua">https://github.com/Infrabass/Reascripts/raw/d98dca167632126580fde30d3f73367ea5e97a3d/ITEM/VF%20-%20ITEM%20-%20Advanced%20items%20repositioning%20-%20last%20values%20without%20GUI.lua</source>
+      </version>
     </reapack>
   </category>
   <category name="PROJECT">
@@ -133,13 +142,13 @@ Fix a few rare issues]]></changelog>
     </reapack>
   </category>
   <metadata>
-    <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 Courier;}}
+    <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
 
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 VF Reacripts & JSFX repository\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 VF Reacripts & JSFX repository\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Collection of scripts and jsfx from Vincent Fliniaux\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Installation\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Installation\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Copy and paste this URL in Extensions > ReaPack > Import a repository: https://github.com/Infrabass/Reascripts/raw/master/index.xml\par}
 }
 ]]></description>
